@@ -629,5 +629,7 @@ write_ct(final_partners, output+str(filter)+".ct", filter)
 write_ct(final_partners, output+"no_filter.ct", float(10))
 write_ct(final_partners, output+"-1.ct", float(-1))
 write_ct(final_partners, output+"-2.ct", float(-2))
-write_ct(final_partners, output+meanz+".ct", meanz)
-write_ct(final_partners, output+one_sig_below+".ct", one_sig_below)
+
+#Write CT files based on overall metrics
+#write_ct(final_partners, output+meanz+".ct", meanz)
+#write_ct(final_partners, output+one_sig_below+".ct", one_sig_below)
