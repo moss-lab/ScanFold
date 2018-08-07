@@ -41,6 +41,8 @@ filter = float(sys.argv[2])
 
 output_data = re.split('\.', str(filename))
 output = str(str(output_data[0])+".ScanFold.")
+log_total = open(output+"log", 'w')
+log_win = open(output+"final_partners.log", 'w')
 
 class NucPair:
     #Class to define a base pair
@@ -511,10 +513,10 @@ for k, v in sorted(bp_dict.items()):
 
     #Print first line of log file tables (first half of log file)
     k_nuc = str((nuc_dict[k].nucleotide))
-    print("\ni-nuc\tBP(j)\tNuc\t#BP_Win\tavgMFE\tavgZ\tavgED"
-          +"\tSumZ\tSumZ/#TotalWindows\tBPs= "+str(num_bp))
-    print("nt-"+str(k)+"\t-\t"+str(k_nuc)+"\t"+str(total_windows)
-          +"\t-\t-\t-\t-\t-")
+    log_total.write("\ni-nuc\tBP(j)\tNuc\t#BP_Win\tavgMFE\tavgZ\tavgED"
+          +"\tSumZ\tSumZ/#TotalWindows\tBPs= "+str(num_bp)+"\n")
+    log_total.write("nt-"+str(k)+"\t-\t"+str(k_nuc)+"\t"+str(total_windows)
+          +"\t-\t-\t-\t-\t-"+"\n")
 
     #Print remainder of log file tables (first half of log file)
     total_window_mean_z = {}
@@ -530,13 +532,13 @@ for k, v in sorted(bp_dict.items()):
         k1_mean_mfe = str(round(mean_mfe[k1], 2))
         k1_mean_ed = str(round(mean_ed[k1], 2))
         if int(k) == int(key_i):
-            print(str(k)+"\tNoBP\t"+key_nuc+"\t"+bp_window+"\t"
+            log_total.write(str(k)+"\tNoBP\t"+key_nuc+"\t"+bp_window+"\t"
                   +k1_mean_mfe+"\t"+z_avg+"\t"+k1_mean_ed+"\t"
-                  +z_sum+"\t"+str(test))
+                  +z_sum+"\t"+str(test)+"\n")
         else:
-            print(str(k)+"\t"+key_i+"\t"+key_nuc+"\t"+bp_window+"\t"
+            log_total.write(str(k)+"\t"+key_i+"\t"+key_nuc+"\t"+bp_window+"\t"
                   +k1_mean_mfe+"\t"+z_avg+"\t"+k1_mean_ed+"\t"
-                  +z_sum+"\t"+str(test))
+                  +z_sum+"\t"+str(test)+"\n")
 
     #Define best_bp_key based on coverage-normalized z-score
     best_bp_key = min(total_window_mean_z, key = total_window_mean_z.get)
@@ -567,10 +569,10 @@ for k, v in sorted(bp_dict.items()):
 ######## Detect competing partners, and select final i-j pairs #################
 final_partners = {}
 
-#print header for log file
-print("\ni\tbp(i)\tbp(j)\tavgMFE\tavgZ\tavgED"
+#print header for fianl partener log file (log_win)
+log_win.write("\ni\tbp(i)\tbp(j)\tavgMFE\tavgZ\tavgED"
     + "\t*Indicates most favorable bp has more favorable partner or is "
-    + "more likely to be unpaired (competing coordinates are reported)")
+    + "more likely to be unpaired (competing coordinates are reported)"+"\n")
 
 #Iterate through round 1 i-j pairs
 for k, v in sorted(best_bps.items()):
@@ -604,10 +606,10 @@ for k, v in sorted(best_bps.items()):
     #Check if best basepair was connected to i-nucleotide (i.e., "k")
     if (int(k) != bp.icoordinate) and (int(k) != int(bp.jcoordinate)):
         #if there was a competing i-j pair print it to log file instead:
-        print("nt-"+str(k)+"*:\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
+        log_win.write("nt-"+str(k)+"*:\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
               +str(round(best_bps[k].mfe, 2))
               +"\t"+str(round(best_bps[k].zscore, 2))
-              +"\t"+str(round(best_bps[k].ed, 2)))
+              +"\t"+str(round(best_bps[k].ed, 2))+"\n")
         final_partners[k] = NucPair(v.inucleotide, v.icoordinate,
                                     v.inucleotide, v.icoordinate,
                                     best_bps[k].zscore,
@@ -615,10 +617,10 @@ for k, v in sorted(best_bps.items()):
                                     best_bps[k].ed)
     else:
         #if there was no competing i-j pair, print to log file:
-        print("nt-"+str(k)+":\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
+        log_win.write("nt-"+str(k)+":\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
               + str(round(best_bps[k].mfe, 2))+"\t"
               + str(round(best_bps[k].zscore, 2))
-              + "\t"+str(round(best_bps[k].ed, 2)))
+              + "\t"+str(round(best_bps[k].ed, 2))+"\n")
         final_partners[k] = NucPair(bp.inucleotide, bp.icoordinate,
                                     bp.jnucleotide, bp.jcoordinate,
                                     best_bps[bp.icoordinate].zscore,
@@ -630,5 +632,5 @@ write_ct(final_partners, output+str(filter)+".ct", filter)
 write_ct(final_partners, output+"no_filter.ct", float(10))
 write_ct(final_partners, output+"-1.ct", float(-1))
 write_ct(final_partners, output+"-2.ct", float(-2))
-write_ct(final_partners, output+meanz+".ct", meanz)
-write_ct(final_partners, output+one_sig_below+".ct", one_sig_below)
+#write_ct(final_partners, output+"mean_"+str(round(meanz, 2))+".ct", meanz)
+#write_ct(final_partners, output+"below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below)
