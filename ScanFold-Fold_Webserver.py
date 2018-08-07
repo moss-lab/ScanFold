@@ -83,14 +83,21 @@ def NucleotideDictionary (lines):
             continue
         else:
             i = 1
-            data = row.split('\t')
-            icoordinate = data[0]
-            sequence = transcribe(data[8])
-            zscore = float(data[4])
+            try:
+                data = row.split('\t')
+                icoordinate = data[0]
+                sequence = transcribe(str(data[8]))
+
+            except:
+                data = row.split(',')
+                icoordinate = data[0]
+                sequence = transcribe(str(data[8]))
+
             for nuc in sequence:
                 x = NucZscore(nuc,(int(icoordinate)+int(i)-1))
                 nuc_dict[x.coordinate] = x
                 i += 1
+
     return nuc_dict;
 
 def competing_pairs(bp_dict, coordinate):
@@ -264,6 +271,7 @@ def transcribe(seq):
         rna_seq = seq.replace('T', 'U')
         return(rna_seq)
 
+#Begin parsing file - Main Loop
 with open(filename, 'r') as f:
     #Initialize bp dictionary and z-score lists
     z_score_list = []
@@ -285,18 +293,30 @@ with open(filename, 'r') as f:
         #Main loop to find all i-j pairs per i-nucleotide
         else:
             #Assign metrics to variables
-            data = row.split('\t')
-            icoordinate = data[0]
-            jcoordinate = data[1]
-            temp = data[2]
-            mfe = float(data[3])
-            zscore = float(data[4])
-            pvalue = data[5]
-            ed = float(data[6])
-            fmfe = data[7]
-            sequence_raw = transcribe(str(data[8]))
-            structure_raw = data[9]
-            centroid = data[10]
+            try:
+                data = row.split('\t')
+                icoordinate = data[0]
+                jcoordinate = data[1]
+                temp = data[2]
+                mfe = float(data[3])
+                zscore = float(data[4])
+                pvalue = data[5]
+                ed = float(data[6])
+                fmfe = data[7]
+                sequence_raw = transcribe(str(data[8]))
+                structure_raw = data[9]
+            except:
+                data = row.split(',')
+                icoordinate = data[0]
+                jcoordinate = data[1]
+                temp = data[2]
+                mfe = float(data[3])
+                zscore = float(data[4])
+                pvalue = data[5]
+                ed = float(data[6])
+                fmfe = data[7]
+                sequence_raw = transcribe(str(data[8]))
+                structure_raw = data[9]
 
             #Convert sequence and structures into lists
             sequence = list(sequence_raw)
@@ -635,10 +655,11 @@ write_ct(final_partners, output+str(filter)+".ct", filter)
 write_ct(final_partners, output+"no_filter.ct", float(10))
 write_ct(final_partners, output+"-1.ct", float(-1))
 write_ct(final_partners, output+"-2.ct", float(-2))
-#write_ct(final_partners, output+"mean_"+str(round(meanz, 2))+".ct", meanz)
-#write_ct(final_partners, output+"below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below)
+write_ct(final_partners, output+"mean_"+str(round(meanz, 2))+".ct", meanz)
+write_ct(final_partners, output+"below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below)
 
 #Write DBN files from CT files
 os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
 os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
 os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
+os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
