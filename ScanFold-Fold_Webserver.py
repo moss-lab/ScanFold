@@ -35,6 +35,9 @@ from collections import Counter, defaultdict
 import sys
 import re
 import numpy as np
+import os
+sys.path.append('/Users/ryanandrews/Desktop/programs/RNAstructure/exe')
+import RNAstructure
 
 filename = sys.argv[1]
 filter = float(sys.argv[2])
@@ -634,3 +637,8 @@ write_ct(final_partners, output+"-1.ct", float(-1))
 write_ct(final_partners, output+"-2.ct", float(-2))
 #write_ct(final_partners, output+"mean_"+str(round(meanz, 2))+".ct", meanz)
 #write_ct(final_partners, output+"below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below)
+
+#Write DBN files from CT files
+os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
+os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
+os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
