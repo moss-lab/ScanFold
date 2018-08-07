@@ -10,7 +10,7 @@ ScanFold-Fold
 Contact: Ryan Andrews - randrews@iastate.edu
 
 This program will take the output from the ScanFold-Scan program (which can be
-found at https://github.com/moss-lab/ScanFold) and condense the entirity of the
+found at https://github.com/moss-lab/ScanFold/ScanFold-Scan.pl) and condense the entirity of the
 scanning window results into a single structure. Only the most unusually stable
 base pairs will be reported.
 
