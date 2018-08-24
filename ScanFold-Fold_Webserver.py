@@ -235,34 +235,42 @@ def write_ct(base_pair_dictionary, filename, filter):
     w = open(filename, 'w')
     w.write((str(len(base_pair_dictionary))+"\t"+filename+"\n"))
     for k, v in base_pair_dictionary.items():
+        print(start_coordinate)
+        print(v.icoordinate)
+        icoordinate = str(int(v.icoordinate)-int(int(start_coordinate)-1))
+        print(icoordinate)
+        jcoordinate = str(int(v.jcoordinate)-int(int(start_coordinate)-1))
+        print(jcoordinate)
+        key_coordinate = str(int(k)-int(start_coordinate)+1)
+        print(key_coordinate)
         if float(v.zscore) < filter:
-            if ((int(v.icoordinate) < int(v.jcoordinate)) and (int(v.icoordinate) == int(k))): #test to see if reverse bp.
-                w.write("%d %s %d %d %d %d\n" % (int(k), v.inucleotide, int(k)-1, int(k)+1, int(v.jcoordinate), int(k)))
+            if ((int(icoordinate) < int(jcoordinate)) and (int(icoordinate) == int(key_coordinate))): #test to see if reverse bp.
+                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(jcoordinate), int(key_coordinate)))
 
-            elif ((int(v.icoordinate) > int(v.jcoordinate)) and (int(v.icoordinate) == int(k))): #test to see if reverse bp.
-                w.write("%d %s %d %d %d %d\n" % (int(k), v.inucleotide, int(k)-1, int(k)+1, int(v.jcoordinate), int(k)))
+            elif ((int(icoordinate) > int(jcoordinate)) and (int(icoordinate) == int(key_coordinate))): #test to see if reverse bp.
+                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(jcoordinate), int(key_coordinate)))
 
-            elif (int(v.icoordinate) < int(v.jcoordinate)) and (int(k) == int(v.jcoordinate)):
-                w.write("%d %s %d %d %d %d\n" % (int(k), v.jnucleotide, int(k)-1, int(k)+1, int(v.icoordinate), int(k)))
+            elif (int(icoordinate) < int(jcoordinate)) and (int(key_coordinate) == int(jcoordinate)):
+                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.jnucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(icoordinate), int(key_coordinate)))
 
-            elif (int(v.icoordinate) > int(v.jcoordinate)) and (int(k) == int(v.jcoordinate)):
-                w.write("%d %s %d %d %d %d\n" % (int(k), v.jnucleotide, int(k)-1, int(k)+1, int(v.icoordinate), int(k)))
+            elif (int(icoordinate) > int(jcoordinate)) and (int(key_coordinate) == int(jcoordinate)):
+                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.jnucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(icoordinate), int(key_coordinate)))
 
-            elif int(v.icoordinate) == int(v.jcoordinate):
-                w.write("%d %s %d %d %d %d\n" % (int(k), v.inucleotide, int(k)-1, int(k)+1, 0, int(k)))
+            elif int(icoordinate) == int(jcoordinate):
+                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
             #
-            # elif (int(k) != v.icoordinate) and (int(k) != int(v.jcoordinate)):
+            # elif (int(key_coordinate) != icoordinate) and (int(key_coordinate) != int(jcoordinate)):
             #     continue
-            #     #w.write("%d %s %d %d %d %d\n" % (int(k), v.inucleotide, int(k)-1, int(k)+1, 0, int(k)))
+            #     #w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
             else:
-                print("Error at", int(k), v.inucleotide, v.icoordinate, v.jnucleotide, int(v.jcoordinate), v.zscore)
+                print("Error at", int(key_coordinate), v.inucleotide, icoordinate, v.jnucleotide, int(jcoordinate), v.zscore)
         else:
-            if int(k) == int(v.icoordinate):
-                w.write("%d %s %d %d %d %d\n" % (int(k), v.inucleotide, int(k)-1, int(k)+1, 0, int(k)))
-            elif int(k) == int(v.jcoordinate):
-                w.write("%d %s %d %d %d %d\n" % (int(k), v.jnucleotide, int(k)-1, int(k)+1, 0, int(k)))
+            if int(key_coordinate) == int(icoordinate):
+                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
+            elif int(key_coordinate) == int(jcoordinate):
+                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.jnucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
             else:
-                raise ValueError("WriteCT function did not find a nucleotide to match coordinate (i or j coordinate does not match dictionary key)")
+                raise ValueError("WriteCT function did not find a nucleotide to match coordinate (i or j coordinate does not match dictionary key_coordinateey_coordinateey)")
             continue
 
 def transcribe(seq):
@@ -282,6 +290,12 @@ with open(filename, 'r') as f:
 
     #Generate nucleotide dictionary to assign each nucleotide in sequence a key
     nuc_dict = NucleotideDictionary(lines)
+
+    #Determine start and end coordinate values
+    start_coordinate = str(list(nuc_dict.keys())[0])
+    print(start_coordinate)
+    end_coordinate = str(list(nuc_dict.keys())[-1])
+    print(end_coordinate)
 
     #Iterate through input file, read each rows metrics, sequence, etc.
     for row in lines:
@@ -305,6 +319,7 @@ with open(filename, 'r') as f:
                 fmfe = data[7]
                 sequence_raw = transcribe(str(data[8]))
                 structure_raw = data[9]
+                print("Tab "+icoordinate)
             except:
                 data = row.split(',')
                 icoordinate = data[0]
@@ -317,6 +332,7 @@ with open(filename, 'r') as f:
                 fmfe = data[7]
                 sequence_raw = transcribe(str(data[8]))
                 structure_raw = data[9]
+                print("Comma "+icoordinate)
 
             #Convert sequence and structures into lists
             sequence = list(sequence_raw)
@@ -460,6 +476,7 @@ for k, v in sorted(bp_dict.items()):
     for pair in v:
         #Create a key  which contains nucleotide and coordinate info
         partner_key = str(pair.jnucleotide)+"-"+str(pair.jcoordinate)
+        print(partner_key)
 
         #Create a variable which contains all i-j pair info
         x = NucPair(pair.inucleotide, pair.icoordinate, pair.jnucleotide,
@@ -555,10 +572,12 @@ for k, v in sorted(bp_dict.items()):
         k1_mean_mfe = str(round(mean_mfe[k1], 2))
         k1_mean_ed = str(round(mean_ed[k1], 2))
         if int(k) == int(key_i):
+            print("iNuc is "+str(key_i))
             log_total.write(str(k)+"\tNoBP\t"+key_nuc+"\t"+bp_window+"\t"
                   +k1_mean_mfe+"\t"+z_avg+"\t"+k1_mean_ed+"\t"
                   +z_sum+"\t"+str(test)+"\n")
         else:
+            print("j is "+str(k))
             log_total.write(str(k)+"\t"+key_i+"\t"+key_nuc+"\t"+bp_window+"\t"
                   +k1_mean_mfe+"\t"+z_avg+"\t"+k1_mean_ed+"\t"
                   +z_sum+"\t"+str(test)+"\n")
@@ -607,11 +626,13 @@ for k, v in sorted(best_bps.items()):
 
     #Put pairs competing with i from i-j pair into total pair dict for i-nuc
     for key, pair in comp_pairs_i.items():
+        print("checking competing pairs for i")
         total_pairs.append(competing_pairs(best_total_window_mean_bps,
                                            pair.jcoordinate))
 
     #Put pairs competing with j from i-j pair into total pair dict for i-nuc
     for key, pair in comp_pairs_j.items():
+        print("checking competing pairs for j")
         total_pairs.append(competing_pairs(best_total_window_mean_bps,
                                            pair.jcoordinate))
 
@@ -619,6 +640,7 @@ for k, v in sorted(best_bps.items()):
     merged_dict = {}
     i = 0
     for d in total_pairs:
+        print("merging competing dictionaries "+str(i))
         for k1, v1 in d.items():
             merged_dict[i] = v1
             i += 1
