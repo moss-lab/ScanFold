@@ -40,7 +40,10 @@ sys.path.append('/Users/ryanandrews/Desktop/programs/RNAstructure/exe')
 import RNAstructure
 
 filename = sys.argv[1]
-filter = float(sys.argv[2])
+try:
+    filter = float(sys.argv[2])
+except:
+    filter = None
 
 output_data = re.split('\.', str(filename))
 output = str(str(output_data[0])+".ScanFold.")
@@ -90,8 +93,18 @@ def NucleotideDictionary (lines):
 
             except:
                 data = row.split(',')
+                strand = int(data[11])
+                print(strand)
                 icoordinate = data[0]
-                sequence = transcribe(str(data[8]))
+                sequence_raw = transcribe(str(data[8]))
+                print(sequence_raw)
+                if strand == -1:
+                    print("NegStrand")
+                    sequence = sequence_raw[::-1]
+                    print(sequence)
+                else:
+                    print("PosStrand")
+                    sequence = sequence_raw
 
             for nuc in sequence:
                 x = NucZscore(nuc,(int(icoordinate)+int(i)-1))
@@ -279,6 +292,11 @@ def transcribe(seq):
         rna_seq = seq.replace('T', 'U')
         return(rna_seq)
 
+def flip_structure(structure):
+    #Function to reverse structure in a given window, for negative strand genes
+    flip = {'(':')', ')':'(', '.':'.'}
+    return ''.join([flip[pair] for pair in structure[::-1]])
+
 #Begin parsing file - Main Loop
 with open(filename, 'r') as f:
     #Initialize bp dictionary and z-score lists
@@ -319,7 +337,7 @@ with open(filename, 'r') as f:
                 fmfe = data[7]
                 sequence_raw = transcribe(str(data[8]))
                 structure_raw = data[9]
-                print("Tab "+icoordinate)
+                #print("Tab "+icoordinate)
             except:
                 data = row.split(',')
                 icoordinate = data[0]
@@ -331,8 +349,27 @@ with open(filename, 'r') as f:
                 ed = float(data[6])
                 fmfe = data[7]
                 sequence_raw = transcribe(str(data[8]))
-                structure_raw = data[9]
-                print("Comma "+icoordinate)
+                structure_raw = str(data[9])
+                strand = int(data[11])
+                if strand == -1:
+                    print(icoordinate)
+                    sequence_forward = sequence_raw
+                    sequence_reverse = sequence_forward[::-1]
+                    structure_forward = structure_raw
+                    print(structure_forward)
+                    structure_reverse = flip_structure(structure_forward)
+                    print(structure_reverse)
+                    # print(sequence_raw)
+                    # print(sequence_reverse)
+                    structure_raw = structure_reverse
+                    sequence_raw = sequence_reverse
+                    icoordinate = data[0]
+                    jcoordinate = data[1]
+                if strand == int(1):
+                    icoordinate = data[0]
+                    jcoordinate = data[1]
+
+                #print("Comma "+icoordinate)
 
             #Convert sequence and structures into lists
             sequence = list(sequence_raw)
@@ -476,7 +513,7 @@ for k, v in sorted(bp_dict.items()):
     for pair in v:
         #Create a key  which contains nucleotide and coordinate info
         partner_key = str(pair.jnucleotide)+"-"+str(pair.jcoordinate)
-        print(partner_key)
+        #print(partner_key)
 
         #Create a variable which contains all i-j pair info
         x = NucPair(pair.inucleotide, pair.icoordinate, pair.jnucleotide,
@@ -572,12 +609,12 @@ for k, v in sorted(bp_dict.items()):
         k1_mean_mfe = str(round(mean_mfe[k1], 2))
         k1_mean_ed = str(round(mean_ed[k1], 2))
         if int(k) == int(key_i):
-            print("iNuc is "+str(key_i))
+            #print("iNuc is "+str(key_i))
             log_total.write(str(k)+"\tNoBP\t"+key_nuc+"\t"+bp_window+"\t"
                   +k1_mean_mfe+"\t"+z_avg+"\t"+k1_mean_ed+"\t"
                   +z_sum+"\t"+str(test)+"\n")
         else:
-            print("j is "+str(k))
+            #print("j is "+str(k))
             log_total.write(str(k)+"\t"+key_i+"\t"+key_nuc+"\t"+bp_window+"\t"
                   +k1_mean_mfe+"\t"+z_avg+"\t"+k1_mean_ed+"\t"
                   +z_sum+"\t"+str(test)+"\n")
@@ -626,13 +663,13 @@ for k, v in sorted(best_bps.items()):
 
     #Put pairs competing with i from i-j pair into total pair dict for i-nuc
     for key, pair in comp_pairs_i.items():
-        print("checking competing pairs for i")
+        #print("checking competing pairs for i")
         total_pairs.append(competing_pairs(best_total_window_mean_bps,
                                            pair.jcoordinate))
 
     #Put pairs competing with j from i-j pair into total pair dict for i-nuc
     for key, pair in comp_pairs_j.items():
-        print("checking competing pairs for j")
+        #print("checking competing pairs for")
         total_pairs.append(competing_pairs(best_total_window_mean_bps,
                                            pair.jcoordinate))
 
@@ -640,7 +677,7 @@ for k, v in sorted(best_bps.items()):
     merged_dict = {}
     i = 0
     for d in total_pairs:
-        print("merging competing dictionaries "+str(i))
+        #print("merging competing dictionaries "+str(i))
         for k1, v1 in d.items():
             merged_dict[i] = v1
             i += 1
@@ -673,7 +710,8 @@ for k, v in sorted(best_bps.items()):
                                     best_bps[bp.icoordinate].ed)
 
 #Write CT files
-write_ct(final_partners, output+str(filter)+".ct", filter)
+if filter != None:
+    write_ct(final_partners, output+str(filter)+".ct", filter)
 write_ct(final_partners, output+"no_filter.ct", float(10))
 write_ct(final_partners, output+"-1.ct", float(-1))
 write_ct(final_partners, output+"-2.ct", float(-2))
@@ -684,6 +722,7 @@ write_ct(final_partners, output+"below_mean_"+str(round(one_sig_below, 2))+".ct"
 os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
 os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
 os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
-os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
+if filter != None:
+    os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
 os.system(str("ct2dot "+output+"mean_"+str(round(meanz, 2))+".ct 1 "+output+"mean_"+str(round(meanz, 2))+".dbn"))
 os.system(str("ct2dot "+output+"below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"below_mean_"+str(round(one_sig_below, 2))+".dbn"))
