@@ -38,6 +38,8 @@ import numpy as np
 import os
 sys.path.append('/Users/ryanandrews/Desktop/programs/RNAstructure/exe')
 import RNAstructure
+import time
+start_time = time.time()
 
 filename = sys.argv[1]
 try:
@@ -45,6 +47,12 @@ try:
 except:
     filter = None
 
+try:
+    options = str(sys.argv[3])
+except:
+    options = None
+
+#print(options, filter)
 output_data = re.split('\.', str(filename))
 output = str(str(output_data[0])+".ScanFold.")
 log_total = open(output+"log", 'w')
@@ -94,16 +102,16 @@ def NucleotideDictionary (lines):
             except:
                 data = row.split(',')
                 strand = int(data[11])
-                print(strand)
+                #print(strand)
                 icoordinate = data[0]
                 sequence_raw = transcribe(str(data[8]))
-                print(sequence_raw)
+                #print(sequence_raw)
                 if strand == -1:
-                    print("NegStrand")
+                    #print("NegStrand")
                     sequence = sequence_raw[::-1]
-                    print(sequence)
+                    #print(sequence)
                 else:
-                    print("PosStrand")
+                    #print("PosStrand")
                     sequence = sequence_raw
 
             for nuc in sequence:
@@ -243,48 +251,107 @@ def best_basepair(bp_dict, nucleotide, coordinate, type):
 
     return best_bp;
 
-def write_ct(base_pair_dictionary, filename, filter):
+def write_ct(base_pair_dictionary, filename, filter, strand):
     #Function to write connectivity table files from a list of best i-j pairs
     w = open(filename, 'w')
     w.write((str(len(base_pair_dictionary))+"\t"+filename+"\n"))
+    if strand == 1:
+        for k, v in base_pair_dictionary.items():
+            #print(start_coordinate)
+            #print(v.icoordinate)
+            icoordinate = str(int(v.icoordinate)-int(int(start_coordinate)-1))
+            #print(icoordinate)
+            jcoordinate = str(int(v.jcoordinate)-int(int(start_coordinate)-1))
+            #print(jcoordinate)
+            key_coordinate = str(int(k)-int(start_coordinate)+1)
+            #print(key_coordinate)
+            if float(v.zscore) < filter:
+                if ((int(icoordinate) < int(jcoordinate)) and (int(icoordinate) == int(key_coordinate))): #test to see if reverse bp.
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(jcoordinate), int(key_coordinate)))
+
+                elif ((int(icoordinate) > int(jcoordinate)) and (int(icoordinate) == int(key_coordinate))): #test to see if reverse bp.
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(jcoordinate), int(key_coordinate)))
+
+                elif (int(icoordinate) < int(jcoordinate)) and (int(key_coordinate) == int(jcoordinate)):
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.jnucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(icoordinate), int(key_coordinate)))
+
+                elif (int(icoordinate) > int(jcoordinate)) and (int(key_coordinate) == int(jcoordinate)):
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.jnucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(icoordinate), int(key_coordinate)))
+
+                elif int(icoordinate) == int(jcoordinate):
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
+                #
+                # elif (int(key_coordinate) != icoordinate) and (int(key_coordinate) != int(jcoordinate)):
+                #     continue
+                #     #w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
+                else:
+                    print("Error at", int(key_coordinate), v.inucleotide, icoordinate, v.jnucleotide, int(jcoordinate), v.zscore)
+            else:
+                if int(key_coordinate) == int(icoordinate):
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
+                elif int(key_coordinate) == int(jcoordinate):
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.jnucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
+                else:
+                    raise ValueError("WriteCT function did not find a nucleotide to match coordinate (i or j coordinate does not match dictionary key_coordinateey_coordinateey)")
+                continue
+
+    if strand == -1:
+        for k, v in sorted(base_pair_dictionary.items(), key=lambda x:x[0], reverse = True):
+            # print(start_coordinate)
+            # print(end_coordinate)
+            # print("i="+str(v.icoordinate))
+            # print("j="+str(v.jcoordinate))
+            # print("k="+str(k))
+            icoordinate = str(int(end_coordinate)+1-(int(int(v.icoordinate))))
+            # print("i_after"+str(icoordinate))
+            jcoordinate = str(int(end_coordinate)+1-(int(int(v.jcoordinate))))
+            # print("j_after="+str(jcoordinate))
+            key_coordinate = str(int(end_coordinate)-int(k)+1)
+            # print("key="+str(key_coordinate))
+            if float(v.zscore) < filter:
+                if ((int(icoordinate) < int(jcoordinate)) and (int(icoordinate) == int(key_coordinate))): #test to see if reverse bp.
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(jcoordinate), int(key_coordinate)))
+
+                elif ((int(icoordinate) > int(jcoordinate)) and (int(icoordinate) == int(key_coordinate))): #test to see if reverse bp.
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(jcoordinate), int(key_coordinate)))
+
+                elif (int(icoordinate) < int(jcoordinate)) and (int(key_coordinate) == int(jcoordinate)):
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.jnucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(icoordinate), int(key_coordinate)))
+
+                elif (int(icoordinate) > int(jcoordinate)) and (int(key_coordinate) == int(jcoordinate)):
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.jnucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(icoordinate), int(key_coordinate)))
+
+                elif int(icoordinate) == int(jcoordinate):
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
+                #
+                # elif (int(key_coordinate) != icoordinate) and (int(key_coordinate) != int(jcoordinate)):
+                #     continue
+                #     #w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
+                else:
+                    print("Error at", int(key_coordinate), v.inucleotide, icoordinate, v.jnucleotide, int(jcoordinate), v.zscore)
+            else:
+                if int(key_coordinate) == int(icoordinate):
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
+                elif int(key_coordinate) == int(jcoordinate):
+                    w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.jnucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
+                else:
+                    raise ValueError("WriteCT function did not find a nucleotide to match coordinate (i or j coordinate does not match dictionary key_coordinateey_coordinateey)")
+                continue
+
+def write_dp(base_pair_dictionary, filename, filter): #this function will create a dp file for IGV
+    w = open(filename, 'w')
     for k, v in base_pair_dictionary.items():
-        print(start_coordinate)
-        print(v.icoordinate)
-        icoordinate = str(int(v.icoordinate)-int(int(start_coordinate)-1))
-        print(icoordinate)
-        jcoordinate = str(int(v.jcoordinate)-int(int(start_coordinate)-1))
-        print(jcoordinate)
-        key_coordinate = str(int(k)-int(start_coordinate)+1)
-        print(key_coordinate)
         if float(v.zscore) < filter:
-            if ((int(icoordinate) < int(jcoordinate)) and (int(icoordinate) == int(key_coordinate))): #test to see if reverse bp.
-                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(jcoordinate), int(key_coordinate)))
-
-            elif ((int(icoordinate) > int(jcoordinate)) and (int(icoordinate) == int(key_coordinate))): #test to see if reverse bp.
-                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(jcoordinate), int(key_coordinate)))
-
-            elif (int(icoordinate) < int(jcoordinate)) and (int(key_coordinate) == int(jcoordinate)):
-                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.jnucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(icoordinate), int(key_coordinate)))
-
-            elif (int(icoordinate) > int(jcoordinate)) and (int(key_coordinate) == int(jcoordinate)):
-                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.jnucleotide, int(key_coordinate)-1, int(key_coordinate)+1, int(icoordinate), int(key_coordinate)))
-
-            elif int(icoordinate) == int(jcoordinate):
-                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
-            #
-            # elif (int(key_coordinate) != icoordinate) and (int(key_coordinate) != int(jcoordinate)):
-            #     continue
-            #     #w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
+            probability = (v.zscore/minz)
+            if int(v.icoordinate) < int(v.jcoordinate):
+                #w.write("%d\t%d\t%f\n" % (k, int(v.jcoordinate), float(-(math.log10(probability)))))
+                w.write("%d\t%d\t%f\n" % (v.icoordinate, int(v.jcoordinate), float(((-1/minz)*(v.zscore)))/minz))
+            elif int(v.icoordinate) > int(v.jcoordinate):
+                w.write("%d\t%d\t%f\n" % (int(v.icoordinate), int(v.jcoordinate), float(((-1/minz)*(v.zscore)))/minz))
+            elif int(v.icoordinate) == int(v.jcoordinate):
+                w.write("%d\t%d\t%f\n" % (k, int(v.jcoordinate), float(((-1/minz)*(v.zscore)))/minz))
             else:
-                print("Error at", int(key_coordinate), v.inucleotide, icoordinate, v.jnucleotide, int(jcoordinate), v.zscore)
-        else:
-            if int(key_coordinate) == int(icoordinate):
-                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.inucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
-            elif int(key_coordinate) == int(jcoordinate):
-                w.write("%d %s %d %d %d %d\n" % (int(key_coordinate), v.jnucleotide, int(key_coordinate)-1, int(key_coordinate)+1, 0, int(key_coordinate)))
-            else:
-                raise ValueError("WriteCT function did not find a nucleotide to match coordinate (i or j coordinate does not match dictionary key_coordinateey_coordinateey)")
-            continue
+                print("Error at:", k)
 
 def transcribe(seq):
     #Function to covert T nucleotides to U nucleotides
@@ -308,14 +375,16 @@ with open(filename, 'r') as f:
 
     #Generate nucleotide dictionary to assign each nucleotide in sequence a key
     nuc_dict = NucleotideDictionary(lines)
+    print("Sequence length: "+str(len(nuc_dict))+"nt")
 
     #Determine start and end coordinate values
     start_coordinate = str(list(nuc_dict.keys())[0])
-    print(start_coordinate)
+    #print(start_coordinate)
     end_coordinate = str(list(nuc_dict.keys())[-1])
-    print(end_coordinate)
+    #print(end_coordinate)
 
     #Iterate through input file, read each rows metrics, sequence, etc.
+    print("Reading sequence and structures...")
     for row in lines:
 
         #Ignore blank lines
@@ -352,13 +421,13 @@ with open(filename, 'r') as f:
                 structure_raw = str(data[9])
                 strand = int(data[11])
                 if strand == -1:
-                    print(icoordinate)
+                    #print(icoordinate)
                     sequence_forward = sequence_raw
                     sequence_reverse = sequence_forward[::-1]
                     structure_forward = structure_raw
-                    print(structure_forward)
+                    #print(structure_forward)
                     structure_reverse = flip_structure(structure_forward)
-                    print(structure_reverse)
+                    #print(structure_reverse)
                     # print(sequence_raw)
                     # print(sequence_reverse)
                     structure_raw = structure_reverse
@@ -501,8 +570,10 @@ best_sum_bps_means = {}
 best_total_window_mean_bps = {}
 
 #Iterate through initial i-nuc dictionary to determine best base pairs (round 1)
+elapsed_time = round((time.time() - start_time), 2)
+print("Elapsed time: "+str(elapsed_time)+"s")
+print("Determining best base pairs...")
 for k, v in sorted(bp_dict.items()):
-
     #Initiate local dictionaries to store metrics per nucleotide
     zscore_dict = {}
     pair_dict = {}
@@ -635,6 +706,7 @@ for k, v in sorted(bp_dict.items()):
     best_coordinate = best_bp_data[1]
 
     #Fill dictionary with coverage normalized z-score
+    #print("Determining best base pair for nucleotide ", k)
     best_total_window_mean_bps[k] = (NucPair((nuc_dict[k]).nucleotide,
                                      nuc_dict[k].coordinate, best_nucleotide,
                                      best_coordinate, best_total_window_mean_z,
@@ -647,6 +719,8 @@ for k, v in sorted(bp_dict.items()):
 
 ######## Detect competing partners, and select final i-j pairs #################
 final_partners = {}
+elapsed_time = round((time.time() - start_time), 2)
+print("Elapsed time: "+str(elapsed_time)+"s")
 
 #print header for fianl partener log file (log_win)
 log_win.write("\ni\tbp(i)\tbp(j)\tavgMFE\tavgZ\tavgED"
@@ -654,75 +728,122 @@ log_win.write("\ni\tbp(i)\tbp(j)\tavgMFE\tavgZ\tavgED"
     + "more likely to be unpaired (competing coordinates are reported)"+"\n")
 
 #Iterate through round 1 i-j pairs
-for k, v in sorted(best_bps.items()):
+if '-c' in str(options):
+    print("Detecting competing pairs...")
+    j_coord_list = []
+    # for k, v in sorted(best_bps.items()):
+    #     print(jcoordinate)
+    #     j_coord_list.append(int(v.jcoordinate))
 
-    #For each i and j in i-j pair, detect competing pairs and append to dict
-    comp_pairs_i = competing_pairs(best_total_window_mean_bps, v.icoordinate)
-    comp_pairs_j = competing_pairs(best_total_window_mean_bps, v.jcoordinate)
-    total_pairs = []
+    for k, v in sorted(best_bps.items()):
+        #print(k, v.icoordinate, v.jcoordinate)
+        test_k = int(k)
+        #print(sum(test_k == int(v.jcoordinate) for v in best_bps.values()))
+        if sum(test_k == int(v.jcoordinate) for v in best_bps.values()) >= 0:
+            #print("Found competing pair for "+str(k))
+            #elapsed_time = round((time.time() - start_time), 2)
+            #print(elapsed_time)
+            #print("Detecting competing pairs for nuc ", k)
+            #For each i and j in i-j pair, detect competing pairs and append to dict
+            comp_pairs_i = competing_pairs(best_total_window_mean_bps, v.icoordinate)
+            comp_pairs_j = competing_pairs(best_total_window_mean_bps, v.jcoordinate)
+            total_pairs = []
 
-    #Put pairs competing with i from i-j pair into total pair dict for i-nuc
-    for key, pair in comp_pairs_i.items():
-        #print("checking competing pairs for i")
-        total_pairs.append(competing_pairs(best_total_window_mean_bps,
-                                           pair.jcoordinate))
+            #Put pairs competing with i from i-j pair into total pair dict for i-nuc
+            for key, pair in comp_pairs_i.items():
+                #print("checking competing pairs for i")
+                total_pairs.append(competing_pairs(best_total_window_mean_bps,
+                                                   pair.jcoordinate))
 
-    #Put pairs competing with j from i-j pair into total pair dict for i-nuc
-    for key, pair in comp_pairs_j.items():
-        #print("checking competing pairs for")
-        total_pairs.append(competing_pairs(best_total_window_mean_bps,
-                                           pair.jcoordinate))
+            #Put pairs competing with j from i-j pair into total pair dict for i-nuc
+            for key, pair in comp_pairs_j.items():
+                #print("checking competing pairs for")
+                total_pairs.append(competing_pairs(best_total_window_mean_bps,
+                                                   pair.jcoordinate))
 
-    #Merge all dictionaries
-    merged_dict = {}
-    i = 0
-    for d in total_pairs:
-        #print("merging competing dictionaries "+str(i))
-        for k1, v1 in d.items():
-            merged_dict[i] = v1
-            i += 1
+            #Merge all dictionaries
+            merged_dict = {}
+            i = 0
+            for d in total_pairs:
+                #print("merging competing dictionaries "+str(i))
+                for k1, v1 in d.items():
+                    merged_dict[i] = v1
+                    i += 1
 
-    #initiate best_basepair fucntion, return best_bp based on sum
-    bp = best_basepair(merged_dict, v.inucleotide, v.icoordinate, "sum")
+            #initiate best_basepair fucntion, return best_bp based on sum
+            bp = best_basepair(merged_dict, v.inucleotide, v.icoordinate, "sum")
 
-    #Check if best basepair was connected to i-nucleotide (i.e., "k")
-    if (int(k) != bp.icoordinate) and (int(k) != int(bp.jcoordinate)):
-        #if there was a competing i-j pair print it to log file instead:
-        log_win.write("nt-"+str(k)+"*:\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
-              +str(round(best_bps[k].mfe, 2))
-              +"\t"+str(round(best_bps[k].zscore, 2))
-              +"\t"+str(round(best_bps[k].ed, 2))+"\n")
-        final_partners[k] = NucPair(v.inucleotide, v.icoordinate,
-                                    v.inucleotide, v.icoordinate,
-                                    best_bps[k].zscore,
-                                    best_bps[k].mfe,
-                                    best_bps[k].ed)
-    else:
-        #if there was no competing i-j pair, print to log file:
-        log_win.write("nt-"+str(k)+":\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
-              + str(round(best_bps[k].mfe, 2))+"\t"
-              + str(round(best_bps[k].zscore, 2))
-              + "\t"+str(round(best_bps[k].ed, 2))+"\n")
-        final_partners[k] = NucPair(bp.inucleotide, bp.icoordinate,
-                                    bp.jnucleotide, bp.jcoordinate,
-                                    best_bps[bp.icoordinate].zscore,
-                                    best_bps[bp.icoordinate].mfe,
-                                    best_bps[bp.icoordinate].ed)
+            #Check if best basepair was connected to i-nucleotide (i.e., "k")
+            if (int(k) != bp.icoordinate) and (int(k) != int(bp.jcoordinate)):
+                #if there was a competing i-j pair print it to log file instead:
+                log_win.write("nt-"+str(k)+"*:\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
+                      +str(round(best_bps[k].mfe, 2))
+                      +"\t"+str(round(best_bps[k].zscore, 2))
+                      +"\t"+str(round(best_bps[k].ed, 2))+"\n")
+                final_partners[k] = NucPair(v.inucleotide, v.icoordinate,
+                                            v.inucleotide, v.icoordinate,
+                                            best_bps[k].zscore,
+                                            best_bps[k].mfe,
+                                            best_bps[k].ed)
+            else:
+                #if there was no competing i-j pair, print to log file:
+                log_win.write("nt-"+str(k)+":\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
+                      + str(round(best_bps[k].mfe, 2))+"\t"
+                      + str(round(best_bps[k].zscore, 2))
+                      + "\t"+str(round(best_bps[k].ed, 2))+"\n")
+                final_partners[k] = NucPair(bp.inucleotide, bp.icoordinate,
+                                            bp.jnucleotide, bp.jcoordinate,
+                                            best_bps[bp.icoordinate].zscore,
+                                            best_bps[bp.icoordinate].mfe,
+                                            best_bps[bp.icoordinate].ed)
+        else:
+            final_partners[k] = NucPair(v.inucleotide, v.icoordinate,
+                                        v.jnucleotide, v.jcoordinate,
+                                        best_bps[k].zscore,
+                                        best_bps[k].mfe,
+                                        best_bps[k].ed)
+            #print("No competing pair found for ", k)
+            continue
+else:
+    elapsed_time = str(round((time.time() - start_time), 2))+"s"
+    print("Elapsed time: "+elapsed_time)
+    print("Writing DP files, can not write CT files...")
+    if filter != None:
+        write_dp(best_bps, output+str(filter)+".dp", filter)
+    write_dp(best_bps, output+"no_filter.dp", float(10))
+    write_dp(best_bps, output+"-1.dp", float(-1))
+    write_dp(best_bps, output+"-2.dp", float(-2))
+    write_dp(best_bps, output+"mean_"+str(round(meanz, 2))+".dp", meanz)
+    write_dp(best_bps, output+"below_mean_"+str(round(one_sig_below, 2))+".dp", one_sig_below)
+    print("ScanFold-Fold complete, find results in...")
 
 #Write CT files
-if filter != None:
-    write_ct(final_partners, output+str(filter)+".ct", filter)
-write_ct(final_partners, output+"no_filter.ct", float(10))
-write_ct(final_partners, output+"-1.ct", float(-1))
-write_ct(final_partners, output+"-2.ct", float(-2))
-write_ct(final_partners, output+"mean_"+str(round(meanz, 2))+".ct", meanz)
-write_ct(final_partners, output+"below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below)
+if '-c' in str(options):
+    print("Trying to write CT files with -c option")
+    elapsed_time = str(round((time.time() - start_time), 2))+"s"
+    print(elapsed_time)
+    print("Writing CT files")
 
-#Write DBN files from CT files
-os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
-os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
-os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
-if filter != None:
-    os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
-os.system(str("ct2dot "+output+"mean_"+str(round(meanz, 2))+".ct 1 "+output+"mean_"+str(round(meanz, 2))+".dbn"))
-os.system(str("ct2dot "+output+"below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"below_mean_"+str(round(one_sig_below, 2))+".dbn"))
+    if filter != None:
+        write_ct(final_partners, output+str(filter)+".ct", filter, strand)
+    write_ct(final_partners, output+"no_filter.ct", float(10), strand)
+    write_ct(final_partners, output+"-1.ct", float(-1), strand)
+    write_ct(final_partners, output+"-2.ct", float(-2), strand)
+    write_ct(final_partners, output+"mean_"+str(round(meanz, 2))+".ct", meanz, strand)
+    write_ct(final_partners, output+"below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
+
+    # except:
+    #     print("Couldn't pass -c option")
+    #     pass
+    #Write DBN files from CT files
+    elapsed_time = str(round((time.time() - start_time), 2))+"s"
+    print("Elapsed time: "+elapsed_time)
+    os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
+    os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
+    os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
+    if filter != None:
+        os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
+    os.system(str("ct2dot "+output+"mean_"+str(round(meanz, 2))+".ct 1 "+output+"mean_"+str(round(meanz, 2))+".dbn"))
+    os.system(str("ct2dot "+output+"below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"below_mean_"+str(round(one_sig_below, 2))+".dbn"))
+
+    print("ScanFold-Fold complete, find results in...")
