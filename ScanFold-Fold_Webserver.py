@@ -145,9 +145,9 @@ def best_basepair(bp_dict, nucleotide, coordinate, type):
     partner_key = 0
     for k, pair in sorted(bp_dict.items()):
         if int(pair.icoordinate) < int(pair.jcoordinate):
+            #print("148")
             x = NucPair(pair.inucleotide, pair.icoordinate, pair.jnucleotide,
                         pair.jcoordinate, pair.zscore, pair.mfe, pair.ed)
-
             try:
                 y = zscore_dict[partner_key]
                 y.append(pair.zscore)
@@ -175,6 +175,7 @@ def best_basepair(bp_dict, nucleotide, coordinate, type):
             partner_key += 1
 
         elif int(pair.icoordinate) > int(pair.jcoordinate):
+            #print("179")
             x = NucPair(pair.inucleotide, pair.icoordinate, pair.jnucleotide,
                         pair.jcoordinate, pair.zscore, pair.mfe, pair.ed)
 
@@ -205,9 +206,9 @@ def best_basepair(bp_dict, nucleotide, coordinate, type):
             partner_key += 1
 
         elif int(pair.icoordinate) == int(pair.jcoordinate):
+            #print("210")
             x = NucPair(pair.inucleotide, pair.icoordinate, pair.jnucleotide,
                         pair.jcoordinate, pair.zscore, pair.mfe, pair.ed)
-
             try:
                 y = zscore_dict[partner_key]
                 y.append(pair.zscore)
@@ -338,7 +339,8 @@ def write_ct(base_pair_dictionary, filename, filter, strand):
                     raise ValueError("WriteCT function did not find a nucleotide to match coordinate (i or j coordinate does not match dictionary key_coordinateey_coordinateey)")
                 continue
 
-def write_dp(base_pair_dictionary, filename, filter): #this function will create a dp file for IGV
+def write_dp(base_pair_dictionary, filename, filter):
+    #this function will create a dp file for IGV
     w = open(filename, 'w')
     for k, v in base_pair_dictionary.items():
         if float(v.zscore) < filter:
@@ -406,6 +408,7 @@ with open(filename, 'r') as f:
                 fmfe = data[7]
                 sequence_raw = transcribe(str(data[8]))
                 structure_raw = data[9]
+                strand = 1
                 #print("Tab "+icoordinate)
             except:
                 data = row.split(',')
@@ -729,6 +732,7 @@ log_win.write("\ni\tbp(i)\tbp(j)\tavgMFE\tavgZ\tavgED"
 
 #Iterate through round 1 i-j pairs
 if '-c' in str(options):
+    print(start_coordinate, end_coordinate)
     print("Detecting competing pairs...")
     j_coord_list = []
     # for k, v in sorted(best_bps.items()):
@@ -740,62 +744,97 @@ if '-c' in str(options):
         test_k = int(k)
         #print(sum(test_k == int(v.jcoordinate) for v in best_bps.values()))
         if sum(test_k == int(v.jcoordinate) for v in best_bps.values()) >= 0:
-            #print("Found competing pair for "+str(k))
-            #elapsed_time = round((time.time() - start_time), 2)
-            #print(elapsed_time)
-            #print("Detecting competing pairs for nuc ", k)
-            #For each i and j in i-j pair, detect competing pairs and append to dict
-            comp_pairs_i = competing_pairs(best_total_window_mean_bps, v.icoordinate)
-            comp_pairs_j = competing_pairs(best_total_window_mean_bps, v.jcoordinate)
-            total_pairs = []
 
-            #Put pairs competing with i from i-j pair into total pair dict for i-nuc
-            for key, pair in comp_pairs_i.items():
-                #print("checking competing pairs for i")
-                total_pairs.append(competing_pairs(best_total_window_mean_bps,
-                                                   pair.jcoordinate))
+            if (
+                (v.icoordinate - length*(2)) >= int(start_coordinate) and
+                (v.icoordinate + (length*2)) <= int(end_coordinate)
+                ):
+                #print(str(v.icoordinate - length*(2)))
+                #print("1-")
+                keys = range(int(v.icoordinate-(length*2)), int(v.icoordinate+(length*2)))
 
-            #Put pairs competing with j from i-j pair into total pair dict for i-nuc
-            for key, pair in comp_pairs_j.items():
-                #print("checking competing pairs for")
-                total_pairs.append(competing_pairs(best_total_window_mean_bps,
-                                                   pair.jcoordinate))
+            elif int(v.icoordinate + (length*(2))) < int(end_coordinate):
+                #print("2-"+str(v.icoordinate - (length*(2)))+" "+str(end_coordinate))
+                keys = range(int(start_coordinate), int(v.icoordinate+(length*2)))
 
-            #Merge all dictionaries
-            merged_dict = {}
-            i = 0
-            for d in total_pairs:
-                #print("merging competing dictionaries "+str(i))
-                for k1, v1 in d.items():
-                    merged_dict[i] = v1
-                    i += 1
+            elif (v.icoordinate + (length*2)) > int(end_coordinate):
+                #print("3-"+str(v.icoordinate + (length*2)))
+                keys = range(int(v.icoordinate-(length*2)), int(end_coordinate))
 
-            #initiate best_basepair fucntion, return best_bp based on sum
-            bp = best_basepair(merged_dict, v.inucleotide, v.icoordinate, "sum")
-
-            #Check if best basepair was connected to i-nucleotide (i.e., "k")
-            if (int(k) != bp.icoordinate) and (int(k) != int(bp.jcoordinate)):
-                #if there was a competing i-j pair print it to log file instead:
-                log_win.write("nt-"+str(k)+"*:\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
-                      +str(round(best_bps[k].mfe, 2))
-                      +"\t"+str(round(best_bps[k].zscore, 2))
-                      +"\t"+str(round(best_bps[k].ed, 2))+"\n")
-                final_partners[k] = NucPair(v.inucleotide, v.icoordinate,
-                                            v.inucleotide, v.icoordinate,
-                                            best_bps[k].zscore,
-                                            best_bps[k].mfe,
-                                            best_bps[k].ed)
             else:
-                #if there was no competing i-j pair, print to log file:
-                log_win.write("nt-"+str(k)+":\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
-                      + str(round(best_bps[k].mfe, 2))+"\t"
-                      + str(round(best_bps[k].zscore, 2))
-                      + "\t"+str(round(best_bps[k].ed, 2))+"\n")
-                final_partners[k] = NucPair(bp.inucleotide, bp.icoordinate,
-                                            bp.jnucleotide, bp.jcoordinate,
-                                            best_bps[bp.icoordinate].zscore,
-                                            best_bps[bp.icoordinate].mfe,
-                                            best_bps[bp.icoordinate].ed)
+                #print("Sub-dictionary error")
+                raise ValueError("Sub-dictionary error")
+
+            subdict = {k: best_total_window_mean_bps[k] for k in keys}
+            #print("SubDict length for "+str(k)+"="+str(len(subdict)))
+
+            if len(subdict) > 0:
+
+                #print("Found competing pair for "+str(k))
+                #elapsed_time = round((time.time() - start_time), 2)
+                #print(elapsed_time)
+                #print("Detecting competing pairs for nuc ", k)
+                #For each i and j in i-j pair, detect competing pairs and append to dict
+                comp_pairs_i = competing_pairs(subdict, v.icoordinate)
+                #print("i-pairs="+str(len(comp_pairs_i)))
+                comp_pairs_j = competing_pairs(subdict, v.jcoordinate)
+                #print("j-pairs="+str(len(comp_pairs_j)))
+                total_pairs = []
+                #Put pairs competing with i from i-j pair into total pair dict for i-nuc
+                for key, pair in comp_pairs_i.items():
+                    #print("checking competing pairs for i")
+                    total_pairs.append(competing_pairs(subdict,
+                                                       pair.jcoordinate))
+
+                #Put pairs competing with j from i-j pair into total pair dict for i-nuc
+                for key, pair in comp_pairs_j.items():
+                    #print("checking competing pairs for")
+                    total_pairs.append(competing_pairs(subdict,
+                                                       pair.jcoordinate))
+
+                #print("Total comp pairs="+str(len(total_pairs)))
+
+                #Merge all dictionaries
+                merged_dict = {}
+                i = 0
+                for d in total_pairs:
+                    #print("merging competing dictionaries "+str(i))
+                    for k1, v1 in d.items():
+                        merged_dict[i] = v1
+                        i += 1
+
+                #print("MergedDict length for "+str(k)+"="+str(len(merged_dict)))
+                #initiate best_basepair fucntion, return best_bp based on sum
+                if len(merged_dict) > 2:
+                    bp = best_basepair(merged_dict, v.inucleotide, v.icoordinate, "sum")
+                else:
+                    bp = best_total_window_mean_bps[k]
+                #Check if best basepair was connected to i-nucleotide (i.e., "k")
+                if (int(k) != bp.icoordinate) and (int(k) != int(bp.jcoordinate)):
+                    #if there was a competing i-j pair print it to log file instead:
+                    log_win.write("nt-"+str(k)+"*:\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
+                          +str(round(best_bps[k].mfe, 2))
+                          +"\t"+str(round(best_bps[k].zscore, 2))
+                          +"\t"+str(round(best_bps[k].ed, 2))+"\n")
+                    final_partners[k] = NucPair(v.inucleotide, v.icoordinate,
+                                                v.inucleotide, v.icoordinate,
+                                                best_bps[k].zscore,
+                                                best_bps[k].mfe,
+                                                best_bps[k].ed)
+                else:
+                    #if there was no competing i-j pair, print to log file:
+                    log_win.write("nt-"+str(k)+":\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
+                          + str(round(best_bps[k].mfe, 2))+"\t"
+                          + str(round(best_bps[k].zscore, 2))
+                          + "\t"+str(round(best_bps[k].ed, 2))+"\n")
+                    final_partners[k] = NucPair(bp.inucleotide, bp.icoordinate,
+                                                bp.jnucleotide, bp.jcoordinate,
+                                                best_bps[bp.icoordinate].zscore,
+                                                best_bps[bp.icoordinate].mfe,
+                                                best_bps[bp.icoordinate].ed)
+
+            else:
+                continue
         else:
             final_partners[k] = NucPair(v.inucleotide, v.icoordinate,
                                         v.jnucleotide, v.jcoordinate,
