@@ -1,4 +1,4 @@
-#!/usr/bin/python3.6
+#!/Library/Frameworks/Python.framework/Versions/3.6/bin/python3.6
 """
   __    __     ______     ______     ______     __         ______     ______
  /\ "-./  \   /\  __ \   /\  ___\   /\  ___\   /\ \       /\  __ \   /\  == \
@@ -54,9 +54,9 @@ except:
 
 #print(options, filter)
 output_data = re.split('\.', str(filename))
-output = str(str(output_data[0])+".ScanFold.")
-log_total = open(output+"log", 'w')
-log_win = open(output+"final_partners.log", 'w')
+output = str(str(filename)+".ScanFold.")
+log_total = open(str(filename)+".log", 'w')
+log_win = open(str(filename)+"final_partners.log", 'w')
 
 class NucPair:
     #Class to define a base pair
@@ -753,13 +753,13 @@ if '-c' in str(options):
                 #print("1-")
                 keys = range(int(v.icoordinate-(length*2)), int(v.icoordinate+(length*2)))
 
-            elif int(v.icoordinate + (length*(2))) < int(end_coordinate):
+            elif int(v.icoordinate + (length*(2))) <= int(end_coordinate):
                 #print("2-"+str(v.icoordinate - (length*(2)))+" "+str(end_coordinate))
-                keys = range(int(start_coordinate), int(v.icoordinate+(length*2)))
+                keys = range(int(start_coordinate), int(v.icoordinate+(length*2))+1)
 
-            elif (v.icoordinate + (length*2)) > int(end_coordinate):
+            elif (v.icoordinate + (length*2)) >= int(end_coordinate):
                 #print("3-"+str(v.icoordinate + (length*2)))
-                keys = range(int(v.icoordinate-(length*2)), int(end_coordinate))
+                keys = range(int(v.icoordinate-(length*2)), int(end_coordinate)+1)
 
             else:
                 #print("Sub-dictionary error")
@@ -768,9 +768,9 @@ if '-c' in str(options):
             subdict = {k: best_total_window_mean_bps[k] for k in keys}
             #print("SubDict length for "+str(k)+"="+str(len(subdict)))
 
-            if len(subdict) > 0:
+            if len(subdict) >= 0:
 
-                #print("Found competing pair for "+str(k))
+                print("Found competing pair for "+str(k))
                 #elapsed_time = round((time.time() - start_time), 2)
                 #print(elapsed_time)
                 #print("Detecting competing pairs for nuc ", k)
@@ -807,21 +807,40 @@ if '-c' in str(options):
                 #initiate best_basepair fucntion, return best_bp based on sum
                 if len(merged_dict) > 2:
                     bp = best_basepair(merged_dict, v.inucleotide, v.icoordinate, "sum")
+                    #print(str(len(merged_dict))+"__11111")
                 else:
-                    bp = best_total_window_mean_bps[k]
+                    print("Nucleotide "+str(k))
+                    bp = best_basepair(merged_dict, v.inucleotide, v.icoordinate, "sum")
+                    #print(str(len(merged_dict))+"____222222")
+                    #bp = best_total_window_mean_bps[k]
                 #Check if best basepair was connected to i-nucleotide (i.e., "k")
                 if (int(k) != bp.icoordinate) and (int(k) != int(bp.jcoordinate)):
+                    #print("1 = "+str(v.icoordinate)+"_"+str(v.jcoordinate)+" AND "+str(bp.icoordinate)+"_"+str(bp.jcoordinate))
                     #if there was a competing i-j pair print it to log file instead:
                     log_win.write("nt-"+str(k)+"*:\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
-                          +str(round(best_bps[k].mfe, 2))
-                          +"\t"+str(round(best_bps[k].zscore, 2))
-                          +"\t"+str(round(best_bps[k].ed, 2))+"\n")
+                          +str(round(bp.mfe, 2))
+                          +"\t"+str(round(bp.zscore, 2))
+                          +"\t"+str(round(bp.ed, 2))+"\n")
                     final_partners[k] = NucPair(v.inucleotide, v.icoordinate,
                                                 v.inucleotide, v.icoordinate,
-                                                best_bps[k].zscore,
-                                                best_bps[k].mfe,
-                                                best_bps[k].ed)
+                                                best_bps[bp.icoordinate].zscore,
+                                                bp.mfe,
+                                                bp.ed)
+                elif ((int(v.icoordinate) == int(v.jcoordinate)) and (int(bp.icoordinate) != int(bp.jcoordinate))):
+                    #Check for instance where competing base pair
+                    #print("!!!!!!!2 = "+str(v.icoordinate)+"_"+str(v.jcoordinate)+" AND "+str(bp.icoordinate)+"_"+str(bp.jcoordinate))
+                    log_win.write("nt-"+str(k)+"*:\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
+                          +str(round(bp.mfe, 2))
+                          +"\t"+str(round(bp.zscore, 2))
+                          +"\t"+str(round(bp.ed, 2))+"\n")
+
+                    final_partners[k] = NucPair(bp.inucleotide, bp.icoordinate,
+                                                bp.jnucleotide, bp.jcoordinate,
+                                                best_bps[bp.icoordinate].zscore,
+                                                best_bps[bp.icoordinate].mfe,
+                                                best_bps[bp.icoordinate].ed)
                 else:
+                    #print("3 = "+str(v.icoordinate)+"_"+str(v.jcoordinate)+" AND "+str(bp.icoordinate)+"_"+str(bp.jcoordinate))
                     #if there was no competing i-j pair, print to log file:
                     log_win.write("nt-"+str(k)+":\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
                           + str(round(best_bps[k].mfe, 2))+"\t"
