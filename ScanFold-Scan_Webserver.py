@@ -1,4 +1,4 @@
-#!usr/bin/python3.6 -w
+#!/Library/Frameworks/Python.framework/Versions/3.6/bin/python3.6
 
 """
   __    __     ______     ______     ______     __         ______     ______
@@ -22,11 +22,12 @@ $ python3.6 ScanFold-Scan.py 1-input 2-stepsize 3-window size 4-randomizations
     3.
     4.
     5.
-    6.
+    6. should be "mono" or "di"
 
 """
 
 import sys
+import argparse
 import string
 import sequence
 #import csv
@@ -48,19 +49,25 @@ window_size = int(sys.argv[3])
 randomizations = int(sys.argv[4])
 temperature = int(sys.argv[5])
 type = str(sys.argv[6])
-w = open(myfasta+".forward.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".txt", 'w')
-s = open("result_summary.forward."+myfasta+".win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".txt", 'w')
+w = open(myfasta+".forward.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
+s = open("result_summary.forward."+myfasta+".win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
 s.write("ReadName\tLength\tMeanMFE\tMeanZ\tMeanP\tMeanED\n")
-r = open(myfasta+".reverse.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".txt", 'w')
-rs = open("result_summary.reverse."+myfasta+".win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".txt", 'w')
-rs.write("ReadName\tLength\tMeanMFE\tMeanZ\tMeanP\tMeanED\n")
+# r = open(myfasta+".reverse.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
+# rs = open("result_summary.reverse."+myfasta+".win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".txt", 'w')
+# rs.write("ReadName\tLength\tMeanMFE\tMeanZ\tMeanP\tMeanED\n")
 
 md = RNA.md()
 md.temperature = int(temperature)
 
 
 #### Defining Dinucleotide function #####
-
+# Taken from
+# altschulEriksonDinuclShuffle.py
+# P. Clote, Oct 2003
+# NOTE: One cannot use function "count(s,word)" to count the number
+# of occurrences of dinucleotide word in string s, since the built-in
+# function counts only nonoverlapping words, presumably in a left to
+# right fashion.
 def computeCountAndLists(s):
   #WARNING: Use of function count(s,'UU') returns 1 on word UUU
   #since it apparently counts only nonoverlapping words UU
@@ -181,7 +188,8 @@ def dinuclShuffle(s):
     del List[prevCh][0]
     prevCh = ch
   L.append(s[-1])
-  t = string.join(L,"")
+ # print(L)
+  t = "".join(L)
   return t
 
 #### Defining my functions #####
@@ -321,7 +329,7 @@ with open(myfasta, 'r') as forward_fasta:
                     #print(pscore)
                     pscore_total.append(pscore)
 
-                    print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                    #print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
                     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
                     #gff3file.write()
                     #pscore_wig.write()
@@ -361,5 +369,5 @@ with open(myfasta, 'r') as forward_fasta:
             mean_zscore = round(np.mean(numerical_z), 2)
             mean_MFE = round(np.mean(MFE_total), 2)
             mean_ED = round(np.mean(ED_total), 2)
-            w.write("---\t---\t---\t---\t---\t---\t---\t---\tSummary:\tLength\tMeanMFE\tMeanZ\tMeanPscore\tMeanED\n---\t---\t---\t---\t---\t---\t---\t---\t---\t"+str(length)+"\t"+str(mean_MFE)+"\t"+str(mean_zscore)+"\t"+str(mean_pscore)+"\t"+str(mean_ED)+"\n\n")
+            #w.write("---\t---\t---\t---\t---\t---\t---\t---\tSummary:\tLength\tMeanMFE\tMeanZ\tMeanPscore\tMeanED\n---\t---\t---\t---\t---\t---\t---\t---\t---\t"+str(length)+"\t"+str(mean_MFE)+"\t"+str(mean_zscore)+"\t"+str(mean_pscore)+"\t"+str(mean_ED)+"\n\n")
             s.write(str(read_name)+"\t"+str(length)+"\t"+str(mean_MFE)+"\t"+str(mean_zscore)+"\t"+str(mean_pscore)+"\t"+str(mean_ED)+"\n")
