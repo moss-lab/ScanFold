@@ -41,11 +41,20 @@ import RNAstructure
 import time
 start_time = time.time()
 
-filename = sys.argv[1]
-try:
-    filter = float(sys.argv[2])
-except:
-    filter = None
+
+parser = argparse.ArgumentParser()
+parser.add_argument('filename',  type=str,
+                    help='input filename')
+parser.add_argument('-f', type=int, default=-3,
+                    help='filter value')
+parser.add_argument('-c', type=int, default=1,
+                    help='Competition')
+
+
+args = parser.parse_args()
+filename = args.filename
+filter = int(args.f)
+competition = int(args.c)
 
 try:
     options = str(sys.argv[3])
@@ -97,14 +106,28 @@ def NucleotideDictionary (lines):
             try:
                 data = row.split('\t')
                 icoordinate = data[0]
-                sequence = transcribe(str(data[8]))
+                if ("A" or "G" or "C" or "T" or "U") in str(data[8]):
+                    #print("8"+str(data[8]))
+                    sequence = transcribe(str(data[8]))
+                elif ("A" or "G" or "C" or "T" or "U") in str(data[7]):
+                    #print("7")
+                    sequence = transcribe(str(data[7]))
+                else:
+                    raise("Could not find sequence for window")
 
             except:
                 data = row.split(',')
                 strand = int(data[11])
                 #print(strand)
                 icoordinate = data[0]
-                sequence_raw = transcribe(str(data[8]))
+                if "A" or "G" or "C" or "T" or "U" in str(data[8]):
+                    sequence_raw = transcribe(str(data[8]))
+                elif "A" or "G" or "C" or "T" or "U" in str(data[7]):
+                    sequence_raw = transcribe(str(data[7]))
+                else:
+                    raise("Could not find sequence for window")
+
+
                 #print(sequence_raw)
                 if strand == -1:
                     #print("NegStrand")
@@ -115,6 +138,7 @@ def NucleotideDictionary (lines):
                     sequence = sequence_raw
 
             for nuc in sequence:
+                #print(nuc)
                 x = NucZscore(nuc,(int(icoordinate)+int(i)-1))
                 nuc_dict[x.coordinate] = x
                 i += 1
@@ -128,7 +152,6 @@ def competing_pairs(bp_dict, coordinate):
     for k, v in bp_dict.items():
         if ((int(v.jcoordinate) == int(coordinate)) or
             (int(v.icoordinate) == int(coordinate))):
-
             x = NucPair(v.inucleotide, v.icoordinate, v.jnucleotide,
                         v.jcoordinate, v.zscore, v.mfe, v.ed)
             comp_pairs[i] = x
@@ -175,7 +198,6 @@ def best_basepair(bp_dict, nucleotide, coordinate, type):
             partner_key += 1
 
         elif int(pair.icoordinate) > int(pair.jcoordinate):
-            #print("179")
             x = NucPair(pair.inucleotide, pair.icoordinate, pair.jnucleotide,
                         pair.jcoordinate, pair.zscore, pair.mfe, pair.ed)
 
@@ -247,8 +269,12 @@ def best_basepair(bp_dict, nucleotide, coordinate, type):
         if type == 'mean':
             best_bp_key = min(mean_z, key = mean_z.get)
 
-    v = pair_dict[best_bp_key]
-    best_bp = v[0]
+    try:
+        v = pair_dict[best_bp_key]
+        best_bp = v[0]
+    except:
+        print("ERROR")
+        print(k)
 
     return best_bp;
 
@@ -398,6 +424,7 @@ with open(filename, 'r') as f:
             #Assign metrics to variables
             try:
                 data = row.split('\t')
+
                 icoordinate = data[0]
                 jcoordinate = data[1]
                 temp = data[2]
@@ -405,9 +432,17 @@ with open(filename, 'r') as f:
                 zscore = float(data[4])
                 pvalue = data[5]
                 ed = float(data[6])
-                fmfe = data[7]
-                sequence_raw = transcribe(str(data[8]))
-                structure_raw = data[9]
+                if ("A" or "G" or "C" or "T" or "U") in str(data[8]):
+                    #print("8"+str(data[8]))
+                    fmfe = float(data[7])
+                    sequence_raw = transcribe(str(data[8]))
+                    structure_raw = str(data[9])
+
+                elif ("A" or "G" or "C" or "T" or "U") in str(data[7]):
+                    #print("7")
+                    sequence_raw = transcribe(str(data[7]))
+                    structure_raw = str(data[8])
+
                 strand = 1
                 #print("Tab "+icoordinate)
             except:
@@ -565,6 +600,7 @@ with open(filename, 'r') as f:
         stdz = float(np.std(z_score_list))
 
         one_sig_below = float(meanz-stdz)
+        two_sig_below = float( meanz - ( 2 * stdz) )
 
 #Initiate global dictionaries to store best base pairs
 best_bps = {}
@@ -664,6 +700,7 @@ for k, v in sorted(bp_dict.items()):
 
     #Print first line of log file tables (first half of log file)
     k_nuc = str((nuc_dict[k].nucleotide))
+    #print(k_nuc)
     log_total.write("\ni-nuc\tBP(j)\tNuc\t#BP_Win\tavgMFE\tavgZ\tavgED"
           +"\tSumZ\tSumZ/#TotalWindows\tBPs= "+str(num_bp)+"\n")
     log_total.write("nt-"+str(k)+"\t-\t"+str(k_nuc)+"\t"+str(total_windows)
@@ -731,7 +768,7 @@ log_win.write("\ni\tbp(i)\tbp(j)\tavgMFE\tavgZ\tavgED"
     + "more likely to be unpaired (competing coordinates are reported)"+"\n")
 
 #Iterate through round 1 i-j pairs
-if '-c' in str(options):
+if competition == 1:
     print(start_coordinate, end_coordinate)
     print("Detecting competing pairs...")
     j_coord_list = []
@@ -744,33 +781,42 @@ if '-c' in str(options):
         test_k = int(k)
         #print(sum(test_k == int(v.jcoordinate) for v in best_bps.values()))
         if sum(test_k == int(v.jcoordinate) for v in best_bps.values()) >= 0:
+            keys = range(int(start_coordinate), int(end_coordinate))
+            # if (length) * 4 < int(int(end_coordinate) - int(start_coordinate) + 1):
+            #     keys = range(int(start_coordinate), int(end_coordinate))
 
-            if (
-                (v.icoordinate - length*(2)) >= int(start_coordinate) and
-                (v.icoordinate + (length*2)) <= int(end_coordinate)
-                ):
-                #print(str(v.icoordinate - length*(2)))
-                #print("1-")
-                keys = range(int(v.icoordinate-(length*2)), int(v.icoordinate+(length*2)))
+            # elif (
+            #     (v.icoordinate - length*(2)) >= int(start_coordinate) and
+            #     (v.icoordinate + (length*2)) <= int(end_coordinate)
+            #     ):
+            #     #print(str(v.icoordinate - length*(2)))
+            #     #print("1-")
+            #     keys = range(int(v.icoordinate-(length*2)), int(v.icoordinate+(length*2)))
+            #
+            # elif int(v.icoordinate + (length*(2))) <= int(end_coordinate):
+            #     #print("2-"+str(v.icoordinate - (length*(2)))+" "+str(end_coordinate))
+            #     keys = range(int(start_coordinate), int(v.icoordinate+(length*2))+1)
+            #
+            # elif (v.icoordinate + (length*2)) >= int(end_coordinate):
+            #     if v.icoordinate-(length*2) > 0:
+            #         #print("3-"+str(v.icoordinate + (length*2)))
+            #         keys = range(int(v.icoordinate-(length*2)), int(end_coordinate)+1)
+            #     else:
+            #         keys =range(int(start_coordinate), int(end_coordinate))
 
-            elif int(v.icoordinate + (length*(2))) <= int(end_coordinate):
-                #print("2-"+str(v.icoordinate - (length*(2)))+" "+str(end_coordinate))
-                keys = range(int(start_coordinate), int(v.icoordinate+(length*2))+1)
-
-            elif (v.icoordinate + (length*2)) >= int(end_coordinate):
-                #print("3-"+str(v.icoordinate + (length*2)))
-                keys = range(int(v.icoordinate-(length*2)), int(end_coordinate)+1)
-
-            else:
-                #print("Sub-dictionary error")
-                raise ValueError("Sub-dictionary error")
+            # else:
+            #     #print("Sub-dictionary error")
+            #     raise ValueError("Sub-dictionary error")
 
             subdict = {k: best_total_window_mean_bps[k] for k in keys}
+            # if k == 216:
+            #     for subk, subv in subdict.items():
+            #         print(subk, subv.icoordinate, subv.jcoordinate)
             #print("SubDict length for "+str(k)+"="+str(len(subdict)))
 
             if len(subdict) >= 0:
 
-                print("Found competing pair for "+str(k))
+                #print("Found competing pair for "+str(k))
                 #elapsed_time = round((time.time() - start_time), 2)
                 #print(elapsed_time)
                 #print("Detecting competing pairs for nuc ", k)
@@ -783,16 +829,22 @@ if '-c' in str(options):
                 #Put pairs competing with i from i-j pair into total pair dict for i-nuc
                 for key, pair in comp_pairs_i.items():
                     #print("checking competing pairs for i")
+                    # if k == 216:
+                    #     print(k, pair.icoordinate, pair.jcoordinate, pair.zscore)
                     total_pairs.append(competing_pairs(subdict,
                                                        pair.jcoordinate))
-
+                    total_pairs.append(competing_pairs(subdict,
+                                                       pair.icoordinate))
                 #Put pairs competing with j from i-j pair into total pair dict for i-nuc
                 for key, pair in comp_pairs_j.items():
-                    #print("checking competing pairs for")
+                    #print("checking competing pairs for j")
+                    # if k == 216:
+                    #     print(k, pair.icoordinate, pair.jcoordinate, pair.zscore)
                     total_pairs.append(competing_pairs(subdict,
                                                        pair.jcoordinate))
-
-                #print("Total comp pairs="+str(len(total_pairs)))
+                    total_pairs.append(competing_pairs(subdict,
+                                                       pair.icoordinate))
+                # print(str(k)+"nt Total comp pairs="+str(len(total_pairs)))
 
                 #Merge all dictionaries
                 merged_dict = {}
@@ -800,22 +852,34 @@ if '-c' in str(options):
                 for d in total_pairs:
                     #print("merging competing dictionaries "+str(i))
                     for k1, v1 in d.items():
+                        # if k == 216:
+                        #     print(k, k1, v1.icoordinate, v1.jcoordinate, v1.zscore)
                         merged_dict[i] = v1
                         i += 1
 
-                #print("MergedDict length for "+str(k)+"="+str(len(merged_dict)))
-                #initiate best_basepair fucntion, return best_bp based on sum
-                if len(merged_dict) > 2:
+                # #print("MergedDict length for "+str(k)+"="+str(len(merged_dict)))
+                # #initiate best_basepair fucntion, return best_bp based on sum
+                # if len(merged_dict) > 2:
+                #     bp = best_basepair(merged_dict, v.inucleotide, v.icoordinate, "sum")
+                #     #print(str(len(merged_dict))+"__11111")
+                # else:
+                #     #print("Nucleotide "+str(k))
+                #     bp = best_basepair(merged_dict, v.inucleotide, v.icoordinate, "sum")
+                #     #print(str(len(merged_dict))+"____222222")
+                #     #bp = best_total_window_mean_bps[k]
+                # #Check if best basepair was connected to i-nucleotide (i.e., "k")
+                # print(len(merged_dict))
+                if len(merged_dict) > 0:
                     bp = best_basepair(merged_dict, v.inucleotide, v.icoordinate, "sum")
-                    #print(str(len(merged_dict))+"__11111")
                 else:
-                    print("Nucleotide "+str(k))
-                    bp = best_basepair(merged_dict, v.inucleotide, v.icoordinate, "sum")
-                    #print(str(len(merged_dict))+"____222222")
-                    #bp = best_total_window_mean_bps[k]
-                #Check if best basepair was connected to i-nucleotide (i.e., "k")
+                    bp = NucPair(v.inucleotide, v.icoordinate,
+                                                v.inucleotide, v.icoordinate,
+                                                v.zscore,
+                                                v.mfe,
+                                                v.ed)
+
                 if (int(k) != bp.icoordinate) and (int(k) != int(bp.jcoordinate)):
-                    #print("1 = "+str(v.icoordinate)+"_"+str(v.jcoordinate)+" AND "+str(bp.icoordinate)+"_"+str(bp.jcoordinate))
+                    # print("1 = "+str(v.icoordinate)+"_"+str(v.jcoordinate)+" AND "+str(bp.icoordinate)+"_"+str(bp.jcoordinate))
                     #if there was a competing i-j pair print it to log file instead:
                     log_win.write("nt-"+str(k)+"*:\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
                           +str(round(bp.mfe, 2))
@@ -826,23 +890,25 @@ if '-c' in str(options):
                                                 best_bps[bp.icoordinate].zscore,
                                                 bp.mfe,
                                                 bp.ed)
-                elif ((int(v.icoordinate) == int(v.jcoordinate)) and (int(bp.icoordinate) != int(bp.jcoordinate))):
-                    #Check for instance where competing base pair
-                    #print("!!!!!!!2 = "+str(v.icoordinate)+"_"+str(v.jcoordinate)+" AND "+str(bp.icoordinate)+"_"+str(bp.jcoordinate))
-                    log_win.write("nt-"+str(k)+"*:\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
-                          +str(round(bp.mfe, 2))
-                          +"\t"+str(round(bp.zscore, 2))
-                          +"\t"+str(round(bp.ed, 2))+"\n")
-
-                    final_partners[k] = NucPair(bp.inucleotide, bp.icoordinate,
-                                                bp.jnucleotide, bp.jcoordinate,
-                                                best_bps[bp.icoordinate].zscore,
-                                                best_bps[bp.icoordinate].mfe,
-                                                best_bps[bp.icoordinate].ed)
+                #
+                # elif ((int(v.icoordinate) == int(v.jcoordinate)) and (int(bp.icoordinate) != int(bp.jcoordinate))):
+                #     #Check for instance where competing base pair
+                #     print("!!!!!!!2 = "+str(v.icoordinate)+"_"+str(v.jcoordinate)+" AND "+str(bp.icoordinate)+"_"+str(bp.jcoordinate))
+                #     log_win.write("nt-"+str(k)+"*:\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
+                #           +str(round(bp.mfe, 2))
+                #           +"\t"+str(round(bp.zscore, 2))
+                #           +"\t"+str(round(bp.ed, 2))+"\n")
+                #
+                #     final_partners[k] = NucPair(bp.inucleotide, bp.icoordinate,
+                #                                 bp.jnucleotide, bp.jcoordinate,
+                #                                 best_bps[bp.icoordinate].zscore,
+                #                                 best_bps[bp.icoordinate].mfe,
+                #                                 best_bps[bp.icoordinate].ed)
+                #
+                #
                 else:
                     #print("3 = "+str(v.icoordinate)+"_"+str(v.jcoordinate)+" AND "+str(bp.icoordinate)+"_"+str(bp.jcoordinate))
-                    #if there was no competing i-j pair, print to log file:
-                    log_win.write("nt-"+str(k)+":\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
+                    log_win.write("nt-"+str(k)+":\t"+str(bp.icoordinate)+"\t"+str(bp.jcoordinate)+"\t"
                           + str(round(best_bps[k].mfe, 2))+"\t"
                           + str(round(best_bps[k].zscore, 2))
                           + "\t"+str(round(best_bps[k].ed, 2))+"\n")
@@ -862,7 +928,7 @@ if '-c' in str(options):
                                         best_bps[k].ed)
             #print("No competing pair found for ", k)
             continue
-else:
+if competition == 0:
     elapsed_time = str(round((time.time() - start_time), 2))+"s"
     print("Elapsed time: "+elapsed_time)
     print("Writing DP files, can not write CT files...")
@@ -876,7 +942,7 @@ else:
     print("ScanFold-Fold complete, find results in...")
 
 #Write CT files
-if '-c' in str(options):
+if competition == 1:
     print("Trying to write CT files with -c option")
     elapsed_time = str(round((time.time() - start_time), 2))+"s"
     print(elapsed_time)
@@ -887,8 +953,9 @@ if '-c' in str(options):
     write_ct(final_partners, output+"no_filter.ct", float(10), strand)
     write_ct(final_partners, output+"-1.ct", float(-1), strand)
     write_ct(final_partners, output+"-2.ct", float(-2), strand)
-    write_ct(final_partners, output+"mean_"+str(round(meanz, 2))+".ct", meanz, strand)
-    write_ct(final_partners, output+"below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
+    write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
+    write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
+    write_ct(final_partners, output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand)
 
     # except:
     #     print("Couldn't pass -c option")
@@ -901,7 +968,8 @@ if '-c' in str(options):
     os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
     if filter != None:
         os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
-    os.system(str("ct2dot "+output+"mean_"+str(round(meanz, 2))+".ct 1 "+output+"mean_"+str(round(meanz, 2))+".dbn"))
-    os.system(str("ct2dot "+output+"below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"below_mean_"+str(round(one_sig_below, 2))+".dbn"))
+    os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
+    os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
+    os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
 
     print("ScanFold-Fold complete, find results in...")
