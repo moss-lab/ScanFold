@@ -35,7 +35,7 @@ import string
 import re
 import numpy as np
 sys.path.append('/home/randrews/ViennaRNA/lib/python/site-packages/')
-#sys.path.append('/usr/local/lib/python3.6/site-packages')
+sys.path.append('/usr/local/lib/python3.6/site-packages')
 import RNA
 import random
 import multiprocessing
@@ -232,13 +232,23 @@ def zscore_function(energy_list, randomizations):
         zscore = "#DIV/0!"
     return zscore;
 
+def rna_folder(frag):
+    (structure, MFE) = RNA.fold(str(frag))
+    return MFE;
+
+def randomizer(frag):
+    result = ''.join(random.sample(frag,len(frag)))
+    return result;
+
 ###### Function to calculate MFEs using RNAfold #################
 def energies(seq_list):
     energy_list = []
-    for sequence in seq_list:
-        #fc = RNA.fold_compound(str(sequence))
-        (structure, MFE) = RNA.fold(str(sequence)) # calculate and define variables for mfe and structure
-        energy_list.append(MFE) # adds the native fragment to list
+
+    energy_list = multiprocessing(rna_folder, [sequence for sequence in seq_list], 12)
+    # for sequence in seq_list:
+    #     #fc = RNA.fold_compound(str(sequence))
+    #     (structure, MFE) = RNA.fold(str(sequence)) # calculate and define variables for mfe and structure
+    #     energy_list.append(MFE) # adds the native fragment to list
 
     return energy_list;
 
@@ -251,9 +261,11 @@ def scramble(text, randomizations, type):
             result = dinuclShuffle(frag)
             frag_seqs.append(result)
     elif type == "mono":
-        for _ in range(int(randomizations)):
-            result = ''.join(random.sample(frag,len(frag)))
-            frag_seqs.append(result)
+        frag_seqs = multiprocessing(randomizer, [frag for i in range(randomizations)], 12)
+
+        # for _ in range(int(randomizations)):
+        #     result = ''.join(random.sample(frag,len(frag)))
+        #     frag_seqs.append(result)
     else:
         print("Shuffle type not properly designated; please input \"di\" or \"mono\"")
 
@@ -328,10 +340,10 @@ with open(myfasta, 'r') as forward_fasta:
                     #print(str(fmfe))
                     seqlist = [] # creates the list we will be filling with sequence fragments
                     seqlist.append(frag) # adds the native fragment to list
-                    args = frag, randomizations, type
-                    scrambled_sequences = multiprocessing(scramble, args, 12)
+                    scrambled_sequences = scramble(frag, randomizations, type)
                     seqlist.extend(scrambled_sequences)
                     energy_list = energies(seqlist)
+                    print(energy_list)
                     zscore = round(zscore_function(energy_list, randomizations), 2)
                     zscore_total.append(zscore)
 
