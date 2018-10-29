@@ -333,7 +333,9 @@ with open(myfasta, 'r') as forward_fasta:
                         zscore = "#DIV/0"
                         ED = int(0.0)
                         pscore = int(0.0)
-                    else:            
+                        structure = "........................................................................................................................"
+                        centroid = "........................................................................................................................"
+                    else:
                         fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
                         fc.pf() # performs partition function calculations
                         frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
