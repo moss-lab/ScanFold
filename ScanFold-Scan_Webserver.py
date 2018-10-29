@@ -345,7 +345,10 @@ with open(myfasta, 'r') as forward_fasta:
                     seqlist.extend(scrambled_sequences)
                     energy_list = energies(seqlist)
                     print(energy_list)
-                    zscore = round(zscore_function(energy_list, randomizations), 2)
+                    try:
+                        zscore = round(zscore_function(energy_list, randomizations), 2)
+                    except:
+                        zscore = zscore_function(energy_list, randomizations)
                     zscore_total.append(zscore)
 
                     #print(zscore)
