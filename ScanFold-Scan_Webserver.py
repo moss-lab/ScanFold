@@ -39,7 +39,7 @@ sys.path.append('/home/randrews/ViennaRNA/lib/python2.7/site-packages/')
 import RNA
 import random
 import multiprocessing
-import concurrent.futures
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from Bio import SeqIO
 
 
