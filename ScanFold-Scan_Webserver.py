@@ -38,6 +38,8 @@ sys.path.append('/home/randrews/ViennaRNA/lib/python2.7/site-packages/')
 #sys.path.append('/usr/local/lib/python3.6/site-packages')
 import RNA
 import random
+import multiprocessing
+import concurrent.futures
 from Bio import SeqIO
 
 
@@ -59,6 +61,11 @@ s.write("ReadName\tLength\tMeanMFE\tMeanZ\tMeanP\tMeanED\n")
 md = RNA.md()
 md.temperature = int(temperature)
 
+def multiprocessing(func, args,
+                    workers):
+    with ProcessPoolExecutor(work) as ex:
+        res = ex.map(func, args)
+    return list(res)
 
 #### Defining Dinucleotide function #####
 # Taken from
@@ -321,7 +328,8 @@ with open(myfasta, 'r') as forward_fasta:
                     #print(str(fmfe))
                     seqlist = [] # creates the list we will be filling with sequence fragments
                     seqlist.append(frag) # adds the native fragment to list
-                    scrambled_sequences = scramble(frag, randomizations, type)
+                    args = [frag, randomizations, type]
+                    scrambled_sequences = multiprocessing(scramble, args, 12)
                     seqlist.extend(scrambled_sequences)
                     energy_list = energies(seqlist)
                     zscore = round(zscore_function(energy_list, randomizations), 2)
