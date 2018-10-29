@@ -29,13 +29,13 @@ $ python3.6 ScanFold-Scan.py 1-input 2-stepsize 3-window size 4-randomizations
 import sys
 import argparse
 import string
-import sequence
+#import sequence
 #import csv
 #import argparse
 import re
 import numpy as np
 sys.path.append('/home/randrews/ViennaRNA/lib/python2.7/site-packages/')
-sys.path.append('/usr/local/lib/python3.6/site-packages')
+#sys.path.append('/usr/local/lib/python3.6/site-packages')
 import RNA
 import random
 from Bio import SeqIO
@@ -218,6 +218,7 @@ def zscore_function(energy_list, randomizations):
     sd = np.std(energy_list)
     native_mfe = energy_list[0]
     scrambled_mean_mfe = np.mean(energy_list[1:randomizations])
+    #scrambled_sd = np.std(energy_list[1:randomizations])
     if sd != 0:
         zscore = (native_mfe - scrambled_mean_mfe)/sd
     if sd == 0:
@@ -316,6 +317,8 @@ with open(myfasta, 'r') as forward_fasta:
                     (centroid, distance) = fc.centroid() # calculate and define variables for centroid
                     ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
                     ED_total.append(ED)            #print(structure)
+                    #fmfe = fc.pbacktrack()
+                    #print(str(fmfe))
                     seqlist = [] # creates the list we will be filling with sequence fragments
                     seqlist.append(frag) # adds the native fragment to list
                     scrambled_sequences = scramble(frag, randomizations, type)
@@ -329,7 +332,7 @@ with open(myfasta, 'r') as forward_fasta:
                     #print(pscore)
                     pscore_total.append(pscore)
 
-                    #print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                    print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
                     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
                     #gff3file.write()
                     #pscore_wig.write()
