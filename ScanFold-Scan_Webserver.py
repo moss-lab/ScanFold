@@ -253,6 +253,7 @@ def energies(seq_list):
     return energy_list;
 
 ######Function to create X number of scrambled RNAs in list #################
+#test
 def scramble(text, randomizations, type):
     frag = str(text)
     frag_seqs = []
