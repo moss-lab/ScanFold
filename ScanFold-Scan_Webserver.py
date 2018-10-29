@@ -328,33 +328,39 @@ with open(myfasta, 'r') as forward_fasta:
                     #print(start_nucleotide)
                     #print(end_nucleotide)
                     frag = frag.transcribe()
-                    fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
-                    fc.pf() # performs partition function calculations
-                    frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
-                    (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
-                    MFE = round(MFE, 2)
-                    MFE_total.append(MFE)
-                    (centroid, distance) = fc.centroid() # calculate and define variables for centroid
-                    ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
-                    ED_total.append(ED)            #print(structure)
-                    #fmfe = fc.pbacktrack()
-                    #print(str(fmfe))
-                    seqlist = [] # creates the list we will be filling with sequence fragments
-                    seqlist.append(frag) # adds the native fragment to list
-                    scrambled_sequences = scramble(frag, randomizations, type)
-                    seqlist.extend(scrambled_sequences)
-                    energy_list = energies(seqlist)
-                    print(energy_list)
-                    try:
-                        zscore = round(zscore_function(energy_list, randomizations), 2)
-                    except:
-                        zscore = zscore_function(energy_list, randomizations)
-                    zscore_total.append(zscore)
+                    if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
+                        MFE = int(0.0)
+                        zscore = "#DIV/0"
+                        ED = int(0.0)
+                        pscore = int(0.0)
+                    else:            
+                        fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
+                        fc.pf() # performs partition function calculations
+                        frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
+                        (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
+                        MFE = round(MFE, 2)
+                        MFE_total.append(MFE)
+                        (centroid, distance) = fc.centroid() # calculate and define variables for centroid
+                        ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
+                        ED_total.append(ED)            #print(structure)
+                        #fmfe = fc.pbacktrack()
+                        #print(str(fmfe))
+                        seqlist = [] # creates the list we will be filling with sequence fragments
+                        seqlist.append(frag) # adds the native fragment to list
+                        scrambled_sequences = scramble(frag, randomizations, type)
+                        seqlist.extend(scrambled_sequences)
+                        energy_list = energies(seqlist)
+                        print(energy_list)
+                        try:
+                            zscore = round(zscore_function(energy_list, randomizations), 2)
+                        except:
+                            zscore = zscore_function(energy_list, randomizations)
+                        zscore_total.append(zscore)
 
-                    #print(zscore)
-                    pscore = round(pscore_function(energy_list, randomizations), 2)
-                    #print(pscore)
-                    pscore_total.append(pscore)
+                        #print(zscore)
+                        pscore = round(pscore_function(energy_list, randomizations), 2)
+                        #print(pscore)
+                        pscore_total.append(pscore)
 
                     print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
                     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
