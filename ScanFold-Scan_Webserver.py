@@ -344,7 +344,7 @@ with open(myfasta, 'r') as forward_fasta:
                     scrambled_sequences = scramble(frag, randomizations, type)
                     seqlist.extend(scrambled_sequences)
                     energy_list = energies(seqlist)
-                    print(energy_list)
+                    #print(energy_list)
                     zscore = round(zscore_function(energy_list, randomizations), 2)
                     zscore_total.append(zscore)
 
