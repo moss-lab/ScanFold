@@ -34,7 +34,7 @@ import string
 #import argparse
 import re
 import numpy as np
-sys.path.append('/home/randrews/ViennaRNA/lib/python2.7/site-packages/')
+sys.path.append('/home/randrews/ViennaRNA/lib/python/site-packages/')
 #sys.path.append('/usr/local/lib/python3.6/site-packages')
 import RNA
 import random
@@ -63,7 +63,7 @@ md.temperature = int(temperature)
 
 def multiprocessing(func, args,
                     workers):
-    with ProcessPoolExecutor(work) as ex:
+    with ProcessPoolExecutor(workers) as ex:
         res = ex.map(func, args)
     return list(res)
 
@@ -328,7 +328,7 @@ with open(myfasta, 'r') as forward_fasta:
                     #print(str(fmfe))
                     seqlist = [] # creates the list we will be filling with sequence fragments
                     seqlist.append(frag) # adds the native fragment to list
-                    args = [frag, randomizations, type]
+                    args = frag, randomizations, type
                     scrambled_sequences = multiprocessing(scramble, args, 12)
                     seqlist.extend(scrambled_sequences)
                     energy_list = energies(seqlist)
