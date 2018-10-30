@@ -244,7 +244,7 @@ def randomizer(frag):
 def energies(seq_list):
     energy_list = []
 
-    energy_list = multiprocessing(rna_folder, [sequence for sequence in seq_list], 12)
+    energy_list = multiprocessing(rna_folder, [sequence for sequence in seq_list], randomizations)
     # for sequence in seq_list:
     #     #fc = RNA.fold_compound(str(sequence))
     #     (structure, MFE) = RNA.fold(str(sequence)) # calculate and define variables for mfe and structure
@@ -262,7 +262,7 @@ def scramble(text, randomizations, type):
             result = dinuclShuffle(frag)
             frag_seqs.append(result)
     elif type == "mono":
-        frag_seqs = multiprocessing(randomizer, [frag for i in range(randomizations)], 12)
+        frag_seqs = multiprocessing(randomizer, [frag for i in range(randomizations)], randomizations)
 
         # for _ in range(int(randomizations)):
         #     result = ''.join(random.sample(frag,len(frag)))
