@@ -46,12 +46,13 @@ from Bio import SeqIO
 #### Defining global variables ###############
 
 myfasta = sys.argv[1] #input filename
-step_size = int(sys.argv[2])
-window_size = int(sys.argv[3])
-randomizations = int(sys.argv[4])
-temperature = int(sys.argv[5])
-type = str(sys.argv[6])
-w = open(myfasta+".forward.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
+interval = int(sys.argv[2])
+step_size = int(1)
+window_size = int(120)
+randomizations = int(50)
+temperature = int(37)
+type = str("mono")
+w = open(myfasta+".interval_"+str(interval)+".txt", 'w')
 #s = open("result_summary.forward."+myfasta+".win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
 #s.write("ReadName\tLength\tMeanMFE\tMeanZ\tMeanP\tMeanED\n")
 # r = open(myfasta+".reverse.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
@@ -306,12 +307,12 @@ with open(myfasta, 'r') as forward_fasta:
             length = len(cur_record.seq)
             seq = cur_record.seq
             #print(length)
-            w.write("i\tj\tTemperature\tNative_dG\tZ-score\tP-score\tEnsembleDiversity\tSequence\tStructure\tCentroid\t"+read_name+"\n")
+            #w.write("i\tj\tTemperature\tNative_dG\tZ-score\tP-score\tEnsembleDiversity\tSequence\tStructure\tCentroid\t"+read_name+"\n")
             i = 0
 
 
     ##### Main routine using defined functions: ##########################################
-
+            i = interval
             while i == 0 or i <= (length - window_size):
                 start_nucleotide = i + 1 # This will just define the start nucleotide coordinate value
                 frag = seq[i:i+int(window_size)] # This breaks up sequence into fragments
@@ -352,7 +353,7 @@ with open(myfasta, 'r') as forward_fasta:
                         scrambled_sequences = scramble(frag, randomizations, type)
                         seqlist.extend(scrambled_sequences)
                         energy_list = energies(seqlist)
-                        print(energy_list)
+                        #print(energy_list)
                         try:
                             zscore = round(zscore_function(energy_list, randomizations), 2)
                         except:
@@ -364,7 +365,7 @@ with open(myfasta, 'r') as forward_fasta:
                         #print(pscore)
                         pscore_total.append(pscore)
 
-                    #print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                    print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
                     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
                     #gff3file.write()
                     #pscore_wig.write()
@@ -372,7 +373,7 @@ with open(myfasta, 'r') as forward_fasta:
                     #ED_wig.write()
                     #MFE_wig.write()
 
-                    i += step_size #this ensures that the next iteration increases by "step size" length
+                    i += 10 #this ensures that the next iteration increases by "step size" length
 
             #print(len(zscore_total))
             # for z in zscore_total:
