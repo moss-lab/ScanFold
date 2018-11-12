@@ -42,15 +42,45 @@ import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from Bio import SeqIO
 
+#### Parsing arguments ####
+parser = argparse.ArgumentParser()
+parser.add_argument('filename',  type=str,
+                    help='input filename')
+parser.add_argument('-s', type=int, default=1,
+                    help='step size')
+parser.add_argument('-w', type=int, default=120,
+                    help='window size')
+parser.add_argument('-r', type=int, default=50,
+                    help='randomizations')
+parser.add_argument('-t', type=int, default=37,
+                    help='Folding temperature')
+parser.add_argument('-type', type=str, default='mono',
+                    help='randomization type')
+parser.add_argument('-p', type=str, default='off',
+                    help='print to screen option (default off)')
+parser.add_argument('--print_random', type=str, default='off',
+                    help='print to screen option (default off)')
+
+args = parser.parse_args()
+myfasta = args.filename
+step_size = int(args.s)
+window_size = int(args.w)
+randomizations = int(args.r)
+temperature = int(args.t)
+type = str(args.type)
+print_to_screen = str(args.p)
+print_random = str(args.print_random)
+
+
 
 #### Defining global variables ###############
 
-myfasta = sys.argv[1] #input filename
-step_size = int(sys.argv[2])
-window_size = int(sys.argv[3])
-randomizations = int(sys.argv[4])
-temperature = int(sys.argv[5])
-type = str(sys.argv[6])
+#myfasta = sys.argv[1] #input filename
+# step_size = int(sys.argv[2])
+# window_size = int(sys.argv[3])
+# randomizations = int(sys.argv[4])
+# temperature = int(sys.argv[5])
+# type = str(sys.argv[6])
 w = open(myfasta+".forward.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
 #s = open("result_summary.forward."+myfasta+".win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
 #s.write("ReadName\tLength\tMeanMFE\tMeanZ\tMeanP\tMeanED\n")
@@ -244,7 +274,7 @@ def randomizer(frag):
 def energies(seq_list):
     energy_list = []
 
-    energy_list = multiprocessing(rna_folder, [sequence for sequence in seq_list], randomizations)
+    energy_list = multiprocessing(rna_folder, [sequence for sequence in seq_list], 12)
     # for sequence in seq_list:
     #     #fc = RNA.fold_compound(str(sequence))
     #     (structure, MFE) = RNA.fold(str(sequence)) # calculate and define variables for mfe and structure
@@ -262,7 +292,7 @@ def scramble(text, randomizations, type):
             result = dinuclShuffle(frag)
             frag_seqs.append(result)
     elif type == "mono":
-        frag_seqs = multiprocessing(randomizer, [frag for i in range(randomizations)], randomizations)
+        frag_seqs = multiprocessing(randomizer, [frag for i in range(randomizations)], 12)
 
         # for _ in range(int(randomizations)):
         #     result = ''.join(random.sample(frag,len(frag)))
@@ -352,7 +382,8 @@ with open(myfasta, 'r') as forward_fasta:
                         scrambled_sequences = scramble(frag, randomizations, type)
                         seqlist.extend(scrambled_sequences)
                         energy_list = energies(seqlist)
-                        print(energy_list)
+                        if print_random == "on":
+                            print(energy_list)
                         try:
                             zscore = round(zscore_function(energy_list, randomizations), 2)
                         except:
@@ -364,7 +395,8 @@ with open(myfasta, 'r') as forward_fasta:
                         #print(pscore)
                         pscore_total.append(pscore)
 
-                    print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                    if print_to_screen == 'on':
+                        print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
                     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
                     #gff3file.write()
                     #pscore_wig.write()
