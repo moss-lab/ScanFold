@@ -48,7 +48,7 @@ start_time = time.time()
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('filename',  type=str,
+parser.add_argument('-i', '--input', type=str, required=True,
                     help='input filename')
 parser.add_argument('-f', type=int, default=-2,
                     help='filter value')
@@ -57,7 +57,7 @@ parser.add_argument('-c', type=int, default=1,
 
 
 args = parser.parse_args()
-filename = args.filename
+filename = args.input
 filter = int(args.f)
 competition = int(args.c)
 
