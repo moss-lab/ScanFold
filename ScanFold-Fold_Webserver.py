@@ -54,6 +54,16 @@ parser.add_argument('-f', type=int, default=-2,
                     help='filter value')
 parser.add_argument('-c', type=int, default=1,
                     help='Competition')
+parser.add_argument('--out1', type=str,
+                    help='out1 path')
+parser.add_argument('--out2', type=str,
+                    help='out3 path')
+parser.add_argument('--out3', type=str,
+                    help='out3 path')
+parser.add_argument('--out4', type=str,
+                    help='log_file path')
+parser.add_argument('--out5', type=str,
+                    help='final_parter_file path')
 
 
 args = parser.parse_args()
@@ -69,8 +79,12 @@ except:
 #print(options, filter)
 output_data = re.split('\.', str(filename))
 output = str(str(filename)+".ScanFold.")
+
+
 log_total = open(str(filename)+".ScanFold.log.txt", 'w')
 log_win = open(str(filename)+".ScanFold.final_partners.txt", 'w')
+
+
 
 class NucPair:
     #Class to define a base pair
