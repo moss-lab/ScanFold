@@ -14,15 +14,7 @@ This program takes a fasta input file and uses a scanning window approach to
 calculate thermodynamic z-scores for individual windows.
 
 Usage:
-$ python3.6 ScanFold-Scan.py 1-input 2-stepsize 3-window size 4-randomizations
-    5-temperature 6-shuffle type
-
-    1.
-    2.
-    3.
-    4.
-    5.
-    6. should be "mono" or "di"
+$ python3.6 ScanFold-Scan.py filename
 
 """
 
