@@ -39,13 +39,18 @@ import os
 sys.path.append('/Users/ryanandrews/Desktop/programs/RNAstructure/exe')
 import RNAstructure
 import time
+import argparse
+from itertools import repeat
+from functools import partial
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+
 start_time = time.time()
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('filename',  type=str,
                     help='input filename')
-parser.add_argument('-f', type=int, default=-3,
+parser.add_argument('-f', type=int, default=-2,
                     help='filter value')
 parser.add_argument('-c', type=int, default=1,
                     help='Competition')
@@ -64,8 +69,8 @@ except:
 #print(options, filter)
 output_data = re.split('\.', str(filename))
 output = str(str(filename)+".ScanFold.")
-log_total = open(str(filename)+".log", 'w')
-log_win = open(str(filename)+"final_partners.log", 'w')
+log_total = open(str(filename)+".ScanFold.log.txt", 'w')
+log_win = open(str(filename)+".ScanFold.final_partners.txt", 'w')
 
 class NucPair:
     #Class to define a base pair
@@ -948,28 +953,28 @@ if competition == 1:
     print(elapsed_time)
     print("Writing CT files")
 
-    if filter != None:
+    if filter != None or filter != -2:
         write_ct(final_partners, output+str(filter)+".ct", filter, strand)
     write_ct(final_partners, output+"no_filter.ct", float(10), strand)
     write_ct(final_partners, output+"-1.ct", float(-1), strand)
     write_ct(final_partners, output+"-2.ct", float(-2), strand)
-    write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
-    write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
-    write_ct(final_partners, output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand)
+    # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
+    # write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
+    # write_ct(final_partners, output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand)
 
     # except:
     #     print("Couldn't pass -c option")
     #     pass
     #Write DBN files from CT files
-    elapsed_time = str(round((time.time() - start_time), 2))+"s"
-    print("Elapsed time: "+elapsed_time)
-    os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
-    os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
-    os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
-    if filter != None:
-        os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
-    os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
-    os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
-    os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
+    # elapsed_time = str(round((time.time() - start_time), 2))+"s"
+    # print("Elapsed time: "+elapsed_time)
+    # os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
+    # os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
+    # os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
+    # if filter != None:
+    #     os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
+    # os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
+    # os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
+    # os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
 
     print("ScanFold-Fold complete, find results in...")
