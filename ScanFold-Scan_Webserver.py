@@ -49,7 +49,7 @@ parser.add_argument('-t', type=int, default=37,
 parser.add_argument('-type', type=str, default='mono',
                     help='randomization type')
 parser.add_argument('-p', type=str, default='off',
-                    help='print to screen option (default off)')
+                    help='print to screen option (default off:1)')
 parser.add_argument('--print_random', type=str, default='off',
                     help='print to screen option (default off)')
 
