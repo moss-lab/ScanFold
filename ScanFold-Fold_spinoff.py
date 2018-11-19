@@ -44,6 +44,7 @@ from itertools import repeat
 from functools import partial
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import requests
+import urllib2
 
 start_time = time.time()
 
@@ -1008,6 +1009,6 @@ if competition == 1:
     # os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
 
     r = requests.get(str(callbackurl)+"/"+str(nodeid)+"/0")
-    r.urlopen()
+    print(r)
 
     print("ScanFold-Fold complete, find results in...")
