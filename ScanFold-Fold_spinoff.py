@@ -36,8 +36,8 @@ import sys
 import re
 import numpy as np
 import os
-sys.path.append('/Users/ryanandrews/Desktop/programs/RNAstructure/exe')
-import RNAstructure
+# sys.path.append('/Users/ryanandrews/Desktop/programs/RNAstructure/exe')
+# import RNAstructure
 import time
 import argparse
 from itertools import repeat
