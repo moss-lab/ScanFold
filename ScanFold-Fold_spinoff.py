@@ -43,6 +43,8 @@ import argparse
 from itertools import repeat
 from functools import partial
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+import requests
+import pycurl
 
 start_time = time.time()
 
@@ -64,7 +66,10 @@ parser.add_argument('--out4', type=str,
                     help='log_file path')
 parser.add_argument('--out5', type=str,
                     help='final_parter_file path')
-
+parser.add_argument('--nodeid', type=str,
+                    help='node id')
+parser.add_argument('--callbackurl', type=str,
+                    help='callbackurl')
 
 args = parser.parse_args()
 filename = args.input
@@ -75,6 +80,8 @@ out2 = args.out2
 out3 = args.out3
 out4 = args.out4
 out5 = args.out5
+nodeid = args.nodeid
+callbackurl = args.callbackurl
 
 try:
     options = str(sys.argv[3])
@@ -1000,5 +1007,8 @@ if competition == 1:
     # os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
     # os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
     # os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
+
+    r = requests.get(str(callbackurl)+"/"+str(nodeid)+"/0")
+    r.json()
 
     print("ScanFold-Fold complete, find results in...")
