@@ -44,7 +44,7 @@ from itertools import repeat
 from functools import partial
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import requests
-import urllib2
+#import urllib2
 
 start_time = time.time()
 
