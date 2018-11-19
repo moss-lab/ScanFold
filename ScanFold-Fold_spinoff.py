@@ -1,4 +1,4 @@
-#!/Library/Frameworks/Python.framework/Versions/3.6/bin/python3.6
+#!/usr/local/bin/python3.6
 """
   __    __     ______     ______     ______     __         ______     ______
  /\ "-./  \   /\  __ \   /\  ___\   /\  ___\   /\ \       /\  __ \   /\  == \
