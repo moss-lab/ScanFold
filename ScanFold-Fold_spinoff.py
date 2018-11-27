@@ -1007,6 +1007,7 @@ if competition == 1:
     # os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
     # os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
     url = str(callbackurl+"/"+str(nodeid)+"/0")
+    print(url)
     response = requests.get(url)
 
     print("ScanFold-Fold complete, find results in...")
