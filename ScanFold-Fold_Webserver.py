@@ -15,7 +15,8 @@ the entirity of the scanning window results into a single structure. Only the
 most unusually stable base pairs will be reported.
 
 Usage:
-$ python3.6 ScanFold-Fold.py 1-input 2-filter > 3-logfile
+$ python3.6 ScanFold-Fold.py -i input [options]
+options: -f [filter value (integer) default -2] -c (1 or 0)
 
     1. Name of output file from ScanFold-Scan
 
@@ -54,27 +55,11 @@ parser.add_argument('-f', type=int, default=-2,
                     help='filter value')
 parser.add_argument('-c', type=int, default=1,
                     help='Competition')
-parser.add_argument('--out1', type=str,
-                    help='out1 path')
-parser.add_argument('--out2', type=str,
-                    help='out3 path')
-parser.add_argument('--out3', type=str,
-                    help='out3 path')
-parser.add_argument('--out4', type=str,
-                    help='log_file path')
-parser.add_argument('--out5', type=str,
-                    help='final_parter_file path')
-
 
 args = parser.parse_args()
 filename = args.input
 filter = int(args.f)
 competition = int(args.c)
-
-try:
-    options = str(sys.argv[3])
-except:
-    options = None
 
 #print(options, filter)
 output_data = re.split('\.', str(filename))
@@ -400,6 +385,47 @@ def write_dp(base_pair_dictionary, filename, filter):
             else:
                 print("Error at:", k)
 
+def write_bp(base_pair_dictionary, filename):
+    w = open(filename, 'w')
+        #set color for bp file (igv format)
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 0, 255, 0, str("Less than -2 "+str(minz))))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 0, 94, 255, "-1 to -2"))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 55, 129, 255, "0 to -1"))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 199, 199, 199, "0"))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 228, 228, 228, "0 to 1"))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 243, 243, 243, "1 to 2"))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 247, 247, 247, str("Greater than 2 "+str(minz))))
+
+    for k, v in base_pair_dictionary.items():
+        #choose color
+        if int(v.zscore) < int(-2):
+            score = str(1)
+        if -1 > int(v.zscore) >= -2:
+            score = str(2)
+        if 0 > int(v.zscore) >= -1:
+            score = str(3)
+        if int(v.zscore) == 0 :
+            score = str(4)
+        if 0 < int(v.zscore) <= 1:
+            score = str(5)
+        if 1 < int(v.zscore) <= 2:
+            score = str(6)
+        if int(v.zscore) > 2:
+            score = str(7)
+        else:
+            print("1 Error at: ", k)
+
+        if int(v.icoordinate) < int(v.jcoordinate):
+            #w.write("%d\t%d\t%f\n" % (k, int(v.jcoordinate), float(-(math.log10(probability)))))
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % ("KJ776791.2", int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
+        elif int(v.icoordinate) > int(v.jcoordinate):
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % ("KJ776791.2", int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
+        elif int(v.icoordinate) == int(v.jcoordinate):
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % ("KJ776791.2", k, k, int(v.jcoordinate), int(v.jcoordinate), score))
+        else:
+            print("2 Error at:", k)
+
+
 def transcribe(seq):
     #Function to covert T nucleotides to U nucleotides
     for ch in seq:
@@ -616,6 +642,7 @@ with open(filename, 'r') as f:
         meanz = float(np.mean(z_score_list))
         sdz = float(np.std(z_score_list))
         minz = min(z_score_list)
+        maxz = max(z_score_list)
         stdz = float(np.std(z_score_list))
 
         one_sig_below = float(meanz-stdz)
@@ -947,6 +974,8 @@ if competition == 1:
                                         best_bps[k].ed)
             #print("No competing pair found for ", k)
             continue
+    write_bp(final_partners, "final_partners_test.bp")
+
 if competition == 0:
     elapsed_time = str(round((time.time() - start_time), 2))+"s"
     print("Elapsed time: "+elapsed_time)
@@ -960,6 +989,10 @@ if competition == 0:
     write_dp(best_bps, output+"below_mean_"+str(round(one_sig_below, 2))+".dp", one_sig_below)
     print("ScanFold-Fold complete, find results in...")
 
+    #Write bp files
+    write_bp(best_bps, "best_bps_test.bp")
+
+
 #Write CT files
 if competition == 1:
     print("Trying to write CT files with -c option")
@@ -972,23 +1005,23 @@ if competition == 1:
     write_ct(final_partners, output+"no_filter.ct", float(10), strand)
     write_ct(final_partners, output+"-1.ct", float(-1), strand)
     write_ct(final_partners, output+"-2.ct", float(-2), strand)
-    # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
-    # write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
-    # write_ct(final_partners, output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand)
+    write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
+    write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
+    write_ct(final_partners, output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand)
 
     # except:
     #     print("Couldn't pass -c option")
     #     pass
     #Write DBN files from CT files
-    # elapsed_time = str(round((time.time() - start_time), 2))+"s"
-    # print("Elapsed time: "+elapsed_time)
-    # os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
-    # os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
-    # os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
-    # if filter != None:
-    #     os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
-    # os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
-    # os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
-    # os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
+    elapsed_time = str(round((time.time() - start_time), 2))+"s"
+    print("Elapsed time: "+elapsed_time)
+    os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
+    os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
+    os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
+    if filter != None:
+        os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
+    os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
+    os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
+    os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
 
     print("ScanFold-Fold complete, find results in...")
