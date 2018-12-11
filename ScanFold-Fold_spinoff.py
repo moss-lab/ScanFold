@@ -15,7 +15,10 @@ the entirity of the scanning window results into a single structure. Only the
 most unusually stable base pairs will be reported.
 
 Usage:
-$ python3.6 ScanFold-Fold.py 1-input 2-filter > 3-logfile
+ScanFold-Fold_spinoff.py -i test_3loes.tsv --out1 ./nofilter
+    --out2 ./-1scanfold --out3 ./-2scanfold --out4 ./log_file
+    --out5 ./final_partner_log --out6 ./bp_track
+    --out7 ./fasta --nodeid "/scholar" --callbackurl "https://www.google.com"
 
     1. Name of output file from ScanFold-Scan
 
@@ -68,6 +71,8 @@ parser.add_argument('--out5', type=str,
                     help='final_parter_file path')
 parser.add_argument('--out6', type=str,
                     help='bp_track_file path')
+parser.add_argument('--out7', type=str,
+                    help='fasta_file path')
 parser.add_argument('--nodeid', type=str,
                     help='node id')
 parser.add_argument('--callbackurl', type=str,
@@ -82,6 +87,8 @@ out2 = args.out2
 out3 = args.out3
 out4 = args.out4
 out5 = args.out5
+out6 = args.out6
+out7 = args.out7
 nodeid = args.nodeid
 callbackurl = args.callbackurl
 
@@ -423,6 +430,17 @@ def flip_structure(structure):
     #Function to reverse structure in a given window, for negative strand genes
     flip = {'(':')', ')':'(', '.':'.'}
     return ''.join([flip[pair] for pair in structure[::-1]])
+
+def write_fasta(nucleotide_dictionary, outputfilename):
+    w = open(filename, 'w')
+    fasta_sequence = ""
+    for k, v in nucleotide_dictionary.items():
+        nucleotide = v.nucleotide
+        "".join(nucleotide)
+
+    w.write(">"+filename+"\n");
+    w.write(fasta_sequence)
+
 
 def write_bp(base_pair_dictionary, filename):
     w = open(filename, 'w')
@@ -1069,5 +1087,5 @@ if competition == 1:
     print(url)
     response = requests.get(url)
     write_bp(final_partners, out6)
-
+    write_fasta(nuc_dict, out7)
     print("ScanFold-Fold complete, find results in...")
