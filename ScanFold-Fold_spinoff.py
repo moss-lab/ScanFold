@@ -66,6 +66,8 @@ parser.add_argument('--out4', type=str,
                     help='log_file path')
 parser.add_argument('--out5', type=str,
                     help='final_parter_file path')
+parser.add_argument('--out6', type=str,
+                    help='bp_track_file path')
 parser.add_argument('--nodeid', type=str,
                     help='node id')
 parser.add_argument('--callbackurl', type=str,
@@ -421,6 +423,63 @@ def flip_structure(structure):
     #Function to reverse structure in a given window, for negative strand genes
     flip = {'(':')', ')':'(', '.':'.'}
     return ''.join([flip[pair] for pair in structure[::-1]])
+
+def write_bp(base_pair_dictionary, filename):
+    w = open(filename, 'w')
+        #set color for bp file (igv format)
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 55, 129, 255, str("Less than -2 "+str(minz))))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 89, 222, 111, "-1 to -2"))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 236, 236, 136, "0 to -1"))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 199, 199, 199, "0"))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 228, 228, 228, "0 to 1"))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 243, 243, 243, "1 to 2"))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 247, 247, 247, str("Greater than 2")))
+
+    for k, v in base_pair_dictionary.items():
+        #choose color
+        if float(v.zscore) < float(-2):
+            score = str(0)
+            print(k, v.zscore, score)
+
+        elif (float(v.zscore) < int(-1)) and (float(v.zscore) >= -2):
+            score = str(1)
+            print(k, v.zscore, score)
+
+        elif (float(v.zscore) < int(0)) and (float(v.zscore) >= -1):
+            score = str(2)
+            print(k, v.zscore, score)
+
+        elif float(v.zscore) == 0 :
+            score = str(3)
+            print(k, v.zscore, score)
+
+        elif 0 < float(v.zscore) <= 1:
+            score = str(4)
+            print(k, v.zscore, score)
+
+        elif 1 < float(v.zscore) <= 2:
+            score = str(5)
+            print(k, v.zscore, score)
+
+        elif float(v.zscore) > 2:
+            score = str(6)
+            print(k, v.zscore, score)
+
+        else:
+            print(k, v.zscore, score)
+
+
+        score = str(score)
+
+        if int(v.icoordinate) < int(v.jcoordinate):
+            #w.write("%d\t%d\t%f\n" % (k, int(v.jcoordinate), float(-(math.log10(probability)))))
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % ("KJ776791.2", int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
+        elif int(v.icoordinate) > int(v.jcoordinate):
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % ("KJ776791.2", int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
+        elif int(v.icoordinate) == int(v.jcoordinate):
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % ("KJ776791.2", k, k, int(v.jcoordinate), int(v.jcoordinate), score))
+        else:
+            print("2 Error at:", k)
 
 #Begin parsing file - Main Loop
 with open(filename, 'r') as f:
@@ -1009,5 +1068,6 @@ if competition == 1:
     url = str(callbackurl+"/"+str(nodeid)+"/0")
     print(url)
     response = requests.get(url)
+    write_bp(final_partners, out6)
 
     print("ScanFold-Fold complete, find results in...")
