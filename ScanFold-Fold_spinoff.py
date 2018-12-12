@@ -433,14 +433,13 @@ def flip_structure(structure):
 
 def write_fasta(nucleotide_dictionary, outputfilename):
     w = open(outputfilename, 'w')
-    fasta_sequence = ""
+    fasta_sequence = str()
     for k, v in nucleotide_dictionary.items():
         nucleotide = v.nucleotide
-        "".join(nucleotide)
+        fasta_sequence += nucleotide
 
-    w.write(">"+filename+"\n");
-    w.write(fasta_sequence)
-
+    w.write(">"+filename+"\n")
+    w.write(str(fasta_sequence))
 
 def write_bp(base_pair_dictionary, filename):
     w = open(filename, 'w')
