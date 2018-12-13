@@ -1056,9 +1056,9 @@ if competition == 0:
     print("Writing DP files, can not write CT files...")
     if filter != None:
         write_dp(best_bps, output+str(filter)+".dp", filter)
-    write_dp(best_bps, output+"no_filter.dp", float(10))
-    write_dp(best_bps, output+"-1.dp", float(-1))
-    write_dp(best_bps, output+"-2.dp", float(-2))
+    write_dp(best_bps, out1, float(10))
+    write_dp(best_bps, out2, float(-1))
+    write_dp(best_bps, out3, float(-2))
     write_dp(best_bps, output+"mean_"+str(round(meanz, 2))+".dp", meanz)
     write_dp(best_bps, output+"below_mean_"+str(round(one_sig_below, 2))+".dp", one_sig_below)
     print("ScanFold-Fold complete, find results in...")
