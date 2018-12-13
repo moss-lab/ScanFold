@@ -1101,7 +1101,10 @@ if competition == 1:
 url = str(callbackurl+"/"+str(nodeid)+"/0")
 print(url)
 response = requests.get(url)
-write_bp(final_partners, out6)
+if competition == 1:
+    write_bp(final_partners, out6)
+if competition == 0:
+    write_bp(best_bps, out6)
 write_fasta(nuc_dict, out7, name)
 write_fai(nuc_dict, fasta_index_path, name)
 print("ScanFold-Fold complete, find results in...")
