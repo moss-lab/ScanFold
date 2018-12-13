@@ -15,10 +15,7 @@ the entirity of the scanning window results into a single structure. Only the
 most unusually stable base pairs will be reported.
 
 Usage:
-ScanFold-Fold_spinoff.py -i test_3loes.tsv --out1 ./nofilter
-    --out2 ./-1scanfold --out3 ./-2scanfold --out4 ./log_file
-    --out5 ./final_partner_log --out6 ./bp_track
-    --out7 ./fasta --nodeid "/scholar" --callbackurl "https://www.google.com"
+ScanFold-Fold_spinoff.py -i test_3loes.tsv --out1 ./nofilter --out2 ./-1scanfold --out3 ./-2scanfold --out4 ./log_file --out5 ./final_partner_log --out6 ./bp_track --out7 ./fasta --fasta_index ./fai --nodeid "/scholar" --callbackurl "https://www.google.com"
 
     1. Name of output file from ScanFold-Scan
 
@@ -77,6 +74,10 @@ parser.add_argument('--nodeid', type=str,
                     help='node id')
 parser.add_argument('--callbackurl', type=str,
                     help='callbackurl')
+parser.add_argument('--fasta_index', type=str,
+                    help='fasta index file path')
+parser.add_argument('--name', type=str, default = "UserInput",
+                    help='name of data being analyzied')
 
 args = parser.parse_args()
 filename = args.input
@@ -89,6 +90,8 @@ out4 = args.out4
 out5 = args.out5
 out6 = args.out6
 out7 = args.out7
+name = args.name
+fasta_index_path = args.fasta_index
 nodeid = args.nodeid
 callbackurl = args.callbackurl
 
@@ -431,14 +434,14 @@ def flip_structure(structure):
     flip = {'(':')', ')':'(', '.':'.'}
     return ''.join([flip[pair] for pair in structure[::-1]])
 
-def write_fasta(nucleotide_dictionary, outputfilename):
+def write_fasta(nucleotide_dictionary, outputfilename, name):
     w = open(outputfilename, 'w')
     fasta_sequence = str()
     for k, v in nucleotide_dictionary.items():
         nucleotide = v.nucleotide
         fasta_sequence += nucleotide
 
-    w.write(">"+filename+"\n")
+    w.write(">"+name+"\n")
     w.write(str(fasta_sequence))
 
 def write_bp(base_pair_dictionary, filename):
@@ -456,31 +459,31 @@ def write_bp(base_pair_dictionary, filename):
         #choose color
         if float(v.zscore) < float(-2):
             score = str(0)
-            print(k, v.zscore, score)
+            #print(k, v.zscore, score)
 
         elif (float(v.zscore) < int(-1)) and (float(v.zscore) >= -2):
             score = str(1)
-            print(k, v.zscore, score)
+            #print(k, v.zscore, score)
 
         elif (float(v.zscore) < int(0)) and (float(v.zscore) >= -1):
             score = str(2)
-            print(k, v.zscore, score)
+            #print(k, v.zscore, score)
 
         elif float(v.zscore) == 0 :
             score = str(3)
-            print(k, v.zscore, score)
+            #print(k, v.zscore, score)
 
         elif 0 < float(v.zscore) <= 1:
             score = str(4)
-            print(k, v.zscore, score)
+            #print(k, v.zscore, score)
 
         elif 1 < float(v.zscore) <= 2:
             score = str(5)
-            print(k, v.zscore, score)
+            #print(k, v.zscore, score)
 
         elif float(v.zscore) > 2:
             score = str(6)
-            print(k, v.zscore, score)
+            #print(k, v.zscore, score)
 
         else:
             print(k, v.zscore, score)
@@ -490,13 +493,26 @@ def write_bp(base_pair_dictionary, filename):
 
         if int(v.icoordinate) < int(v.jcoordinate):
             #w.write("%d\t%d\t%f\n" % (k, int(v.jcoordinate), float(-(math.log10(probability)))))
-            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % ("KJ776791.2", int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
         elif int(v.icoordinate) > int(v.jcoordinate):
-            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % ("KJ776791.2", int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
         elif int(v.icoordinate) == int(v.jcoordinate):
-            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % ("KJ776791.2", k, k, int(v.jcoordinate), int(v.jcoordinate), score))
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, k, k, int(v.jcoordinate), int(v.jcoordinate), score))
         else:
             print("2 Error at:", k)
+
+def utf8len(s):
+    return len(s.encode('utf-8'))
+
+def write_fai (nucleotide_dictionary, filename, name):
+    w = open(filename, 'w')
+    name = str(name)
+    length = str(len(nucleotide_dictionary))
+    offset = str(utf8len(str(">"+name+"\n")))
+    linebases = str(len(nucleotide_dictionary))
+    linewidth = str(len(nucleotide_dictionary)+1)
+    w.write("%s\t%s\t%s\t%s\t%s\n" % (name, length, offset, linebases, linewidth))
+
 
 #Begin parsing file - Main Loop
 with open(filename, 'r') as f:
@@ -1086,5 +1102,6 @@ if competition == 1:
     print(url)
     response = requests.get(url)
     write_bp(final_partners, out6)
-    write_fasta(nuc_dict, out7)
+    write_fasta(nuc_dict, out7, name)
+    write_fai(nuc_dict, fasta_index_path, name)
     print("ScanFold-Fold complete, find results in...")
