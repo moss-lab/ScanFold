@@ -14,9 +14,7 @@ This program takes a fasta input file and uses a scanning window approach to
 calculate thermodynamic z-scores for individual windows.
 
 Usage:
-$ ScanFold-Scan_Webserver.py -i fasta --scan_out_path ./out.tsv
-    --zscore_wig_file_path ./zscore.bw --mfe_wig_file_path ./mfe.bw
-        --ed_wig_file_path ./ed.bw --pvalue_wig_file_path ./pvalue.bw
+$ ScanFold-Scan_Webserver.py -i fasta.fa --scan_out_path ./out.tsv --zscore_wig_file_path ./zscore.bw --mfe_wig_file_path ./mfe.bw --ed_wig_file_path ./ed.bw --pvalue_wig_file_path ./pvalue.bw --fasta_file_path ./fasta.fasta.fa --fasta_index ./fasta.fai --nodeid "/scholar" --callbackurl "https://www.google.com"
 """
 
 import sys
@@ -30,6 +28,7 @@ sys.path.append('/usr/local/lib/python3.6/site-packages')
 import RNA
 import random
 import multiprocessing
+import requests
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from Bio import SeqIO
 
@@ -65,8 +64,18 @@ parser.add_argument('--pvalue_wig_file_path', type=str,
                     help='pvalue_wig_file_path')
 parser.add_argument('--name', type=str, default = "UserInput",
                     help='name of data being analyzied')
+parser.add_argument('--fasta_file_path', type=str,
+                    help='fasta_file path')
+parser.add_argument('--fasta_index', type=str,
+                    help='fasta index file path')
+parser.add_argument('--nodeid', type=str,
+                    help='node id')
+parser.add_argument('--callbackurl', type=str,
+                    help='callbackurl')
+
 
 args = parser.parse_args()
+
 myfasta = args.input
 step_size = int(args.s)
 window_size = int(args.w)
@@ -75,12 +84,19 @@ temperature = int(args.t)
 type = str(args.type)
 print_to_screen = str(args.p)
 print_random = str(args.print_random)
+
 scan_out_path = args.scan_out_path
+
 mfe_wig_file_path = args.mfe_wig_file_path
 zscore_wig_file_path = args.zscore_wig_file_path
 pvalue_wig_file_path = args.pvalue_wig_file_path
 ed_wig_file_path = args.ed_wig_file_path
+
 name = args.name
+fasta_file_path = args.fasta_file_path
+fasta_index = args.fasta_index
+nodeid = args.nodeid
+callbackurl = args.callbackurl
 
 
 #### Defining global variables ###############
@@ -234,6 +250,25 @@ def dinuclShuffle(s):
 def reverse_complement(dna):
     complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
     return ''.join([complement[base] for base in dna[::-1]])
+
+def utf8len(s):
+    return len(s.encode('utf-8'))
+
+def write_fai (sequence, filename, name):
+    w = open(filename, 'w')
+    name = str(name)
+    length = str(len(sequence))
+    offset = str(utf8len(str(">"+name+"\n")))
+    linebases = str(len(sequence))
+    linewidth = str(len(sequence)+1)
+    w.write("%s\t%s\t%s\t%s\t%s\n" % (name, length, offset, linebases, linewidth))
+
+def write_fasta(sequence, outputfilename, name):
+    w = open(outputfilename, 'w')
+    fasta_sequence = sequence
+
+    w.write(">"+name+"\n")
+    w.write(str(fasta_sequence))
 
 ###### Function to calculate ZScore on list of MFEs #################
 def pscore_function(energy_list, randomizations):
@@ -442,10 +477,7 @@ with open(myfasta, 'r') as forward_fasta:
         mean_MFE = round(np.mean(MFE_total), 2)
         mean_ED = round(np.mean(ED_total), 2)
 
-        print("Mean MFE = "+str(mean_MFE)+"\n")
-        print("Mean Z-score = "+str(mean_zscore)+"\n")
-        print("Mean P-value = "+str(mean_pscore)+"\n")
-        print("Mean Ensemble Diversity = "+str(mean_ED)+"\n")
+
 
 ### Add each metric from lists to bw file
 MFE_wig.addEntries(record_name, start_nucleotide,  values=MFE_list, span=step_size, step=step_size)
@@ -457,3 +489,16 @@ MFE_wig.close()
 zscore_wig.close()
 pvalue_wig.close()
 ED_wig.close()
+
+write_fasta(seq, fasta_file_path, name)
+write_fai(seq, fasta_index, name)
+
+
+url = str(callbackurl+"/"+str(nodeid)+"/0")
+response = requests.get(url)
+
+print("ScanFold-Scan complete, find results below")
+print("Mean MFE = "+str(mean_MFE))
+print("Mean Z-score = "+str(mean_zscore))
+print("Mean P-value = "+str(mean_pscore))
+print("Mean Ensemble Diversity = "+str(mean_ED))
