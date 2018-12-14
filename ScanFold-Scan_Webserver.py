@@ -14,16 +14,15 @@ This program takes a fasta input file and uses a scanning window approach to
 calculate thermodynamic z-scores for individual windows.
 
 Usage:
-$ python3.6 ScanFold-Scan.py filename
-
+$ ScanFold-Scan_Webserver.py -i fasta --scan_out_path ./out.tsv
+    --zscore_wig_file_path ./zscore.bw --mfe_wig_file_path ./mfe.bw
+        --ed_wig_file_path ./ed.bw --pvalue_wig_file_path ./pvalue.bw
 """
 
 import sys
 import argparse
 import string
-#import sequence
-#import csv
-#import argparse
+import pyBigWig
 import re
 import numpy as np
 sys.path.append('/home/randrews/ViennaRNA/lib/python3.6/site-packages/')
@@ -36,7 +35,7 @@ from Bio import SeqIO
 
 #### Parsing arguments ####
 parser = argparse.ArgumentParser()
-parser.add_argument('filename',  type=str,
+parser.add_argument('-i', '--input', type=str, required=True,
                     help='input filename')
 parser.add_argument('-s', type=int, default=10,
                     help='step size')
@@ -52,11 +51,23 @@ parser.add_argument('-p', type=str, default='off',
                     help='print to screen option (default off:1)')
 parser.add_argument('--print_random', type=str, default='off',
                     help='print to screen option (default off)')
-parser.add_argument('--out1', type=str,
+
+###Required arguments for webserver:
+parser.add_argument('--scan_out_path', type=str,
                     help='ScanFold-Scan output path')
+parser.add_argument('--zscore_wig_file_path', type=str,
+                    help='zscore_wig_file_path')
+parser.add_argument('--mfe_wig_file_path', type=str,
+                    help='mfe_wig_file_path')
+parser.add_argument('--ed_wig_file_path', type=str,
+                    help='ed_wig_file_path')
+parser.add_argument('--pvalue_wig_file_path', type=str,
+                    help='pvalue_wig_file_path')
+parser.add_argument('--name', type=str, default = "UserInput",
+                    help='name of data being analyzied')
 
 args = parser.parse_args()
-myfasta = args.filename
+myfasta = args.input
 step_size = int(args.s)
 window_size = int(args.w)
 randomizations = int(args.r)
@@ -64,26 +75,22 @@ temperature = int(args.t)
 type = str(args.type)
 print_to_screen = str(args.p)
 print_random = str(args.print_random)
-
+scan_out_path = args.scan_out_path
+mfe_wig_file_path = args.mfe_wig_file_path
+zscore_wig_file_path = args.zscore_wig_file_path
+pvalue_wig_file_path = args.pvalue_wig_file_path
+ed_wig_file_path = args.ed_wig_file_path
+name = args.name
 
 
 #### Defining global variables ###############
 
-#myfasta = sys.argv[1] #input filename
-# step_size = int(sys.argv[2])
-# window_size = int(sys.argv[3])
-# randomizations = int(sys.argv[4])
-# temperature = int(sys.argv[5])
-# type = str(sys.argv[6])
-w = open(myfasta+".forward.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
-#s = open("result_summary.forward."+myfasta+".win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
-#s.write("ReadName\tLength\tMeanMFE\tMeanZ\tMeanP\tMeanED\n")
-# r = open(myfasta+".reverse.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
-# rs = open("result_summary.reverse."+myfasta+".win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".txt", 'w')
-# rs.write("ReadName\tLength\tMeanMFE\tMeanZ\tMeanP\tMeanED\n")
-
+### The RNA model "md" needs to be set ABOVE FUNCTIONS! ####
+### DO NOT MOVE ###
 md = RNA.md()
 md.temperature = int(temperature)
+### DO NOT MOVE ###
+### The RNA model "md" needs to be set ABOVE FUNCTIONS! ####
 
 def multiprocessing(func, args,
                     workers):
@@ -228,7 +235,6 @@ def reverse_complement(dna):
     complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
     return ''.join([complement[base] for base in dna[::-1]])
 
-
 ###### Function to calculate ZScore on list of MFEs #################
 def pscore_function(energy_list, randomizations):
     below_native = 0
@@ -297,138 +303,157 @@ def scramble(text, randomizations, type):
     return frag_seqs;
 
 ##################### Main Script #########################################
+
+### Initialize the bigwig files
+MFE_wig = pyBigWig.open(mfe_wig_file_path, 'w')
+zscore_wig = pyBigWig.open(zscore_wig_file_path, 'w')
+pvalue_wig = pyBigWig.open(pvalue_wig_file_path, 'w')
+ED_wig = pyBigWig.open(ed_wig_file_path, 'w')
+
+### Create output file:
+w = open(scan_out_path, 'w')
+
 with open(myfasta, 'r') as forward_fasta:
 
     for cur_record in SeqIO.parse(forward_fasta, "fasta") :
 
-            read_name = cur_record.name
+        ### get info about fasta files like name and sequence
+        #read_name = cur_record.name #this reads fasta header (not reliable)
+        seq = cur_record.seq
+        length = len(seq)
+        record_name = name
 
-            #### this will change based on input fasta file header format #########
-            #print(read.name)
-            #fasta_header = read_name.split('|')
-            #print(fasta_header)
-            #gene_id = fasta_header[0]
-            #transcript_id = fasta_header[1]
-            #chromosome = "chr"+fasta_header[2]
-            #gene_start = fasta_header[3]
-            #gene_end = fasta_header[4]
-            #strand = fasta_header[5]
+        ### Add headers for bigwig files
+        """ Headers need to have the name and length of fasta sequence
+        Should be set up like XYZ_wig.addHeader("chromosomeName", length)
+        """
+        MFE_wig.addHeader([(str(record_name), int(length))])
+        zscore_wig.addHeader([(str(record_name), int(length))])
+        pvalue_wig.addHeader([(str(record_name), int(length))])
+        ED_wig.addHeader([(str(record_name), int(length))])
+
+        ### Create list for metrics to be written to bw via pyBigWig
+        MFE_list = []
+        zscore_list = []
+        pscore_list = []
+        ED_list = []
+
+
         ##### Establish empty lists to capture calculated metrics per window ######
-            zscore_total = []
-            numerical_z = []
-            pscore_total = []
-            numerical_p = []
-            MFE_total = []
-            ED_total = []
+        zscore_total = []
+        numerical_z = []
+        pscore_total = []
+        numerical_p = []
+        MFE_total = []
+        ED_total = []
 
-            #gff3file = open(read.name+'.gff3', 'w')
-            #pscore_wig = open(read.name+'.pscore.wig', 'w')
-            #zscore_wig = open(read.name+".zscore.wig", 'w')
-            #ED_wig = open(read.name+".ED.wig", 'w')
-            #MFE_wig = open(read.name+".MFE.wig", 'w')
-            #print(read.name, read.sequence)
-            length = len(cur_record.seq)
-            seq = cur_record.seq
-            #print(length)
-            w.write("i\tj\tTemperature\tNative_dG\tZ-score\tP-score\tEnsembleDiversity\tSequence\tStructure\tCentroid\t"+read_name+"\n")
-            i = 0
+        ### Write the header for output:
+        w.write("i\tj\tTemperature\tNative_dG\tZ-score\tP-score\tEnsembleDiversity\tSequence\tStructure\tCentroid\t"+record_name+"\n")
+        i = 0
 
 
     ##### Main routine using defined functions: ##########################################
 
-            while i == 0 or i <= (length - window_size):
-                start_nucleotide = i + 1 # This will just define the start nucleotide coordinate value
-                frag = seq[i:i+int(window_size)] # This breaks up sequence into fragments
-                #print(frag)
-                #print(str(len(frag)))
-                start_nucleotide = i + 1
-                end_nucleotide = i + window_size
-                if -1 == 0:
-                    print("Magic")
-                # if 'N' in frag:
-                #     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str(frag)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\n")
-                #     i += step_size #this ensures that the next iteration increases by "step size" length
+        while i == 0 or i <= (length - window_size):
+            start_nucleotide = i + 1 # This will just define the start nucleotide coordinate value
+            frag = seq[i:i+int(window_size)] # This breaks up sequence into fragments
+            #print(frag)
+            #print(str(len(frag)))
+            start_nucleotide = i + 1
+            end_nucleotide = i + window_size
+            if -1 == 0:
+                print("Magic")
+            # if 'N' in frag:
+            #     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str(frag)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\n")
+            #     i += step_size #this ensures that the next iteration increases by "step size" length
+            else:
+                #print(start_nucleotide)
+                #print(end_nucleotide)
+                frag = frag.transcribe()
+                if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
+                    MFE = int(0.0)
+                    zscore = "00.00"
+                    ED = int(0.0)
+                    pscore = int(0.0)
+                    structure = "........................................................................................................................"
+                    centroid = "........................................................................................................................"
                 else:
-                    #print(start_nucleotide)
-                    #print(end_nucleotide)
-                    frag = frag.transcribe()
-                    if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
-                        MFE = int(0.0)
-                        zscore = "#DIV/0"
-                        ED = int(0.0)
-                        pscore = int(0.0)
-                        structure = "........................................................................................................................"
-                        centroid = "........................................................................................................................"
-                    else:
-                        fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
-                        fc.pf() # performs partition function calculations
-                        frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
-                        (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
-                        MFE = round(MFE, 2)
-                        MFE_total.append(MFE)
-                        (centroid, distance) = fc.centroid() # calculate and define variables for centroid
-                        ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
-                        ED_total.append(ED)            #print(structure)
-                        #fmfe = fc.pbacktrack()
-                        #print(str(fmfe))
-                        seqlist = [] # creates the list we will be filling with sequence fragments
-                        seqlist.append(frag) # adds the native fragment to list
-                        scrambled_sequences = scramble(frag, randomizations, type)
-                        seqlist.extend(scrambled_sequences)
-                        energy_list = energies(seqlist)
-                        if print_random == "on":
-                            print(energy_list)
-                        try:
-                            zscore = round(zscore_function(energy_list, randomizations), 2)
-                        except:
-                            zscore = zscore_function(energy_list, randomizations)
-                        zscore_total.append(zscore)
+                    fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
+                    fc.pf() # performs partition function calculations
+                    frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
+                    (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
+                    MFE = round(MFE, 2)
+                    MFE_total.append(MFE)
+                    (centroid, distance) = fc.centroid() # calculate and define variables for centroid
+                    ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
+                    ED_total.append(ED)            #print(structure)
+                    #fmfe = fc.pbacktrack()
+                    #print(str(fmfe))
+                    seqlist = [] # creates the list we will be filling with sequence fragments
+                    seqlist.append(frag) # adds the native fragment to list
+                    scrambled_sequences = scramble(frag, randomizations, type)
+                    seqlist.extend(scrambled_sequences)
+                    energy_list = energies(seqlist)
+                    if print_random == "on":
+                        print(energy_list)
+                    try:
+                        zscore = round(zscore_function(energy_list, randomizations), 2)
+                    except:
+                        zscore = zscore_function(energy_list, randomizations)
+                    zscore_total.append(zscore)
 
-                        #print(zscore)
-                        pscore = round(pscore_function(energy_list, randomizations), 2)
-                        #print(pscore)
-                        pscore_total.append(pscore)
+                    #print(zscore)
+                    pscore = round(pscore_function(energy_list, randomizations), 2)
+                    #print(pscore)
+                    pscore_total.append(pscore)
 
-                    if print_to_screen == 'on':
-                        print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
-                    w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
-                    #gff3file.write()
-                    #pscore_wig.write()
-                    #zscore_wig.write()
-                    #ED_wig.write()
-                    #MFE_wig.write()
+    ### Append metrics to list ###
+                    MFE_list.append(MFE)
+                    zscore_list.append(zscore)
+                    pscore_list.append(pscore)
+                    ED_list.append(ED)
 
-                    i += step_size #this ensures that the next iteration increases by "step size" length
+                if print_to_screen == 'on':
+                    print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                #gff3file.write()
+                #pscore_wig.write()
+                #zscore_wig.write()
+                #ED_wig.write()
+                #MFE_wig.write()
 
-            #print(len(zscore_total))
-            for z in zscore_total:
-                try:
-                    numerical_z.append(float(z))
-                except ValueError:
-                    continue
-            #print(len(numerical_z))
+                i += step_size #this ensures that the next iteration increases by "step size" length
 
-            #print(len(pscore_total))
-            for p in pscore_total:
-                try:
-                    numerical_p.append(float(p))
-                except ValueError:
-                    continue
-            window_count = len(zscore_total)
-            #print(len(numerical_p))
-            #print(window_count)
-            #print(type(window_count))
-            #print(step_size)
-            #print(type(step_size))
-            #print(length)
-            #print(type(length))
-            #coverage = round((float(window_count)*float(step_size))/float(length), 2)
-            #print(coverage)
-            #print(len(MFE_total))
-            #print(len(ED_total))
-            mean_pscore = round(np.mean(numerical_p), 2)
-            mean_zscore = round(np.mean(numerical_z), 2)
-            mean_MFE = round(np.mean(MFE_total), 2)
-            mean_ED = round(np.mean(ED_total), 2)
-            #w.write("---\t---\t---\t---\t---\t---\t---\t---\tSummary:\tLength\tMeanMFE\tMeanZ\tMeanPscore\tMeanED\n---\t---\t---\t---\t---\t---\t---\t---\t---\t"+str(length)+"\t"+str(mean_MFE)+"\t"+str(mean_zscore)+"\t"+str(mean_pscore)+"\t"+str(mean_ED)+"\n\n")
-            #s.write(str(read_name)+"\t"+str(length)+"\t"+str(mean_MFE)+"\t"+str(mean_zscore)+"\t"+str(mean_pscore)+"\t"+str(mean_ED)+"\n")
+        for z in zscore_total:
+            try:
+                numerical_z.append(float(z))
+            except ValueError:
+                continue
+
+        for p in pscore_total:
+            try:
+                numerical_p.append(float(p))
+            except ValueError:
+                continue
+        window_count = len(zscore_total)
+
+        mean_pscore = round(np.mean(numerical_p), 2)
+        mean_zscore = round(np.mean(numerical_z), 2)
+        mean_MFE = round(np.mean(MFE_total), 2)
+        mean_ED = round(np.mean(ED_total), 2)
+
+        print("Mean MFE = "+str(mean_MFE)+"\n")
+        print("Mean Z-score = "+str(mean_zscore)+"\n")
+        print("Mean P-value = "+str(mean_pscore)+"\n")
+        print("Mean Ensemble Diversity = "+str(mean_ED)+"\n")
+
+### Add each metric from lists to bw file
+MFE_wig.addEntries(record_name, start_nucleotide,  values=MFE_list, span=step_size, step=step_size)
+zscore_wig.addEntries(record_name, start_nucleotide,  values=zscore_list, span=step_size, step=step_size)
+pvalue_wig.addEntries(record_name, start_nucleotide,  values=pscore_list, span=step_size, step=step_size)
+ED_wig.addEntries(record_name, start_nucleotide,  values=ED_list, span=step_size, step=step_size)
+
+MFE_wig.close()
+zscore_wig.close()
+pvalue_wig.close()
+ED_wig.close()
