@@ -1,5 +1,3 @@
-#!/Library/Frameworks/Python.framework/Versions/3.6/bin/python3.6
-
 """
   __    __     ______     ______     ______     __         ______     ______
  /\ "-./  \   /\  __ \   /\  ___\   /\  ___\   /\ \       /\  __ \   /\  == \
@@ -14,7 +12,7 @@ This program takes a fasta input file and uses a scanning window approach to
 calculate thermodynamic z-scores for individual windows.
 
 Usage:
-$ python3.6 ScanFold-Scan.py filename
+$ python3.6 ScanFold-Scan.py filename [options]
 
 """
 
@@ -26,8 +24,6 @@ import string
 #import argparse
 import re
 import numpy as np
-sys.path.append('/home/randrews/ViennaRNA/lib/python3.6/site-packages/')
-sys.path.append('/usr/local/lib/python3.6/site-packages')
 import RNA
 import random
 import multiprocessing
@@ -63,23 +59,9 @@ type = str(args.type)
 print_to_screen = str(args.p)
 print_random = str(args.print_random)
 
-
-
 #### Defining global variables ###############
 
-#myfasta = sys.argv[1] #input filename
-# step_size = int(sys.argv[2])
-# window_size = int(sys.argv[3])
-# randomizations = int(sys.argv[4])
-# temperature = int(sys.argv[5])
-# type = str(sys.argv[6])
 w = open(myfasta+".forward.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
-#s = open("result_summary.forward."+myfasta+".win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
-#s.write("ReadName\tLength\tMeanMFE\tMeanZ\tMeanP\tMeanED\n")
-# r = open(myfasta+".reverse.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
-# rs = open("result_summary.reverse."+myfasta+".win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".txt", 'w')
-# rs.write("ReadName\tLength\tMeanMFE\tMeanZ\tMeanP\tMeanED\n")
-
 md = RNA.md()
 md.temperature = int(temperature)
 
