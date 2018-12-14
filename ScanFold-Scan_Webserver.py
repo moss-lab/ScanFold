@@ -26,7 +26,7 @@ import string
 #import argparse
 import re
 import numpy as np
-sys.path.append('/home/randrews/ViennaRNA/lib/python/site-packages/')
+sys.path.append('/home/randrews/ViennaRNA/lib/python3.6/site-packages/')
 sys.path.append('/usr/local/lib/python3.6/site-packages')
 import RNA
 import random
@@ -38,7 +38,7 @@ from Bio import SeqIO
 parser = argparse.ArgumentParser()
 parser.add_argument('filename',  type=str,
                     help='input filename')
-parser.add_argument('-s', type=int, default=1,
+parser.add_argument('-s', type=int, default=10,
                     help='step size')
 parser.add_argument('-w', type=int, default=120,
                     help='window size')
