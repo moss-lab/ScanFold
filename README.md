@@ -6,8 +6,11 @@ The ScanFold-Scan.py and ScanFold-Fold.py scripts were built using Python3.6 and
 
 Dependencies (for ScanFold-Scan):
  ViennaRNA; Must ensure that python3.6 can import "RNA" as a module. See details for that here: https://www.tbi.univie.ac.at/RNA/documentation.html#install
+ 
  NumPy (www.numpy.org/)
+ 
  SeqIO from BioPython (https://biopython.org/wiki/SeqIO)
  
 Dependencies (for ScanFold-Fold):
+ 
  RNAStructure (https://rna.urmc.rochester.edu/Overview/Python.html)
