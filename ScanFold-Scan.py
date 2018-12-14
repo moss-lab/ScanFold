@@ -19,9 +19,6 @@ $ python3.6 ScanFold-Scan.py filename [options]
 import sys
 import argparse
 import string
-#import sequence
-#import csv
-#import argparse
 import re
 import numpy as np
 import RNA
