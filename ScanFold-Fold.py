@@ -15,16 +15,25 @@ most unusually stable base pairs will be reported.
 
 Usage:
 $ python3.6 ScanFold-Fold.py -i input [options]
-options: -f [filter value (integer) default -2] -c (1 or 0)
+options: 
+    -f ["filter value" (integer) default -2] 
+    -c ["competition filter" (integer) 1 for no competition allowed or 0 for competition allowed;
+      competition filtering takes much longer but yields cleaner results]
 
-    1. Name of output file from ScanFold-Scan
+Input: 
+    input: Name of output file from ScanFold-Scan
 
-    2. Cutoff value which will be used in addition to the default values of -2,
+    Filter value: Cutoff value which will be used in addition to the default values of -2,
       -1 and 10.
+     
+    Compeition filter
 
-    3. The standard output is formatted as a log file which contains 1. a list
+Output:
+      The standard output is formatted as a log file which contains 1. a list
       of all nucleotides and their predicted base pairing partners; 2. a list of
       the most favorable base pairs.
+      
+      Also, much 
 
 """
 
