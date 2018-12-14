@@ -1,4 +1,3 @@
-#!/Library/Frameworks/Python.framework/Versions/3.6/bin/python3.6
 """
   __    __     ______     ______     ______     __         ______     ______
  /\ "-./  \   /\  __ \   /\  ___\   /\  ___\   /\ \       /\  __ \   /\  == \
@@ -37,7 +36,6 @@ import sys
 import re
 import numpy as np
 import os
-sys.path.append('/Users/ryanandrews/Desktop/programs/RNAstructure/exe')
 import RNAstructure
 import time
 import argparse
@@ -54,7 +52,7 @@ parser.add_argument('-i', '--input', type=str, required=True,
 parser.add_argument('-f', type=int, default=-2,
                     help='filter value')
 parser.add_argument('-c', type=int, default=1,
-                    help='Competition')
+                    help='Competition (1 for disallow competition, 0 for allow; 1 by default)')
 
 args = parser.parse_args()
 filename = args.input
