@@ -1,5 +1,4 @@
-#!/Library/Frameworks/Python.framework/Versions/3.6/bin/python3.6
-
+#!/usr/local/bin/python3.6
 """
   __    __     ______     ______     ______     __         ______     ______
  /\ "-./  \   /\  __ \   /\  ___\   /\  ___\   /\ \       /\  __ \   /\  == \
@@ -69,7 +68,7 @@ parser.add_argument('--fasta_file_path', type=str,
 parser.add_argument('--fasta_index', type=str,
                     help='fasta index file path')
 
-###
+### input parms ###
 
 parser.add_argument('--nodeid', type=str,
                     help='node id')
