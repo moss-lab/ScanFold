@@ -40,9 +40,9 @@ parser.add_argument('-s', type=int, default=10,
                     help='step size')
 parser.add_argument('-w', type=int, default=120,
                     help='window size')
-parser.add_argument('-r', type=int, default=50,
+parser.add_argument('-r', type=int, default=30,
                     help='randomizations')
-parser.add_argument('-t', type=int, default=37,
+parser.add_argument('-t', '--temp' type=int, default=37,
                     help='Folding temperature')
 parser.add_argument('-type', type=str, default='mono',
                     help='randomization type')
@@ -50,6 +50,8 @@ parser.add_argument('-p', type=str, default='off',
                     help='print to screen option (default off:1)')
 parser.add_argument('--print_random', type=str, default='off',
                     help='print to screen option (default off)')
+parser.add_argument('--name', type=str, default = "UserInput",
+                    help='name of data being analyzed')
 
 ###Required arguments for webserver:
 parser.add_argument('--scan_out_path', type=str,
@@ -62,12 +64,13 @@ parser.add_argument('--ed_wig_file_path', type=str,
                     help='ed_wig_file_path')
 parser.add_argument('--pvalue_wig_file_path', type=str,
                     help='pvalue_wig_file_path')
-parser.add_argument('--name', type=str, default = "UserInput",
-                    help='name of data being analyzied')
 parser.add_argument('--fasta_file_path', type=str,
                     help='fasta_file path')
 parser.add_argument('--fasta_index', type=str,
                     help='fasta index file path')
+
+###
+
 parser.add_argument('--nodeid', type=str,
                     help='node id')
 parser.add_argument('--callbackurl', type=str,
@@ -496,8 +499,9 @@ write_fai(seq, fasta_index, name)
 
 url = str(callbackurl+"/"+str(nodeid)+"/0")
 response = requests.get(url)
+print(url)
 
-print("ScanFold-Scan complete, find results below")
+print("ScanFold-Scan complete, find output files below")
 print("Mean MFE = "+str(mean_MFE))
 print("Mean Z-score = "+str(mean_zscore))
 print("Mean P-value = "+str(mean_pscore))
