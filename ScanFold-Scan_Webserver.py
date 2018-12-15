@@ -41,7 +41,7 @@ parser.add_argument('-w', type=int, default=120,
                     help='window size')
 parser.add_argument('-r', type=int, default=30,
                     help='randomizations')
-parser.add_argument('-t', '--temp' type=int, default=37,
+parser.add_argument('-t', '--temp', type=int, default=37,
                     help='Folding temperature')
 parser.add_argument('-type', type=str, default='mono',
                     help='randomization type')
