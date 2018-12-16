@@ -482,10 +482,10 @@ with open(myfasta, 'r') as forward_fasta:
 
 
 ### Add each metric from lists to bw file
-MFE_wig.addEntries(record_name, start_nucleotide,  values=MFE_list, span=step_size, step=step_size)
-zscore_wig.addEntries(record_name, start_nucleotide,  values=zscore_list, span=step_size, step=step_size)
-pvalue_wig.addEntries(record_name, start_nucleotide,  values=pscore_list, span=step_size, step=step_size)
-ED_wig.addEntries(record_name, start_nucleotide,  values=ED_list, span=step_size, step=step_size)
+MFE_wig.addEntries(record_name, 1,  values=MFE_list, span=step_size, step=step_size)
+zscore_wig.addEntries(record_name, 1,  values=zscore_list, span=step_size, step=step_size)
+pvalue_wig.addEntries(record_name, 1,  values=pscore_list, span=step_size, step=step_size)
+ED_wig.addEntries(record_name, 1,  values=ED_list, span=step_size, step=step_size)
 
 MFE_wig.close()
 zscore_wig.close()
