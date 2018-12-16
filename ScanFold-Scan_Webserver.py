@@ -16,6 +16,7 @@ Usage:
 $ ScanFold-Scan_Webserver.py -i fasta.fa --scan_out_path ./out.tsv --zscore_wig_file_path ./zscore.bw --mfe_wig_file_path ./mfe.bw --ed_wig_file_path ./ed.bw --pvalue_wig_file_path ./pvalue.bw --fasta_file_path ./fasta.fasta.fa --fasta_index ./fasta.fai --nodeid "/scholar" --callbackurl "https://www.google.com"
 """
 
+import time
 import sys
 import argparse
 import string
@@ -30,6 +31,10 @@ import multiprocessing
 import requests
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from Bio import SeqIO
+from progressbar import *               # just a simple progress bar
+
+
+
 
 #### Parsing arguments ####
 parser = argparse.ArgumentParser()
@@ -347,13 +352,19 @@ zscore_wig = pyBigWig.open(zscore_wig_file_path, 'w')
 pvalue_wig = pyBigWig.open(pvalue_wig_file_path, 'w')
 ED_wig = pyBigWig.open(ed_wig_file_path, 'w')
 
+
+
 ### Create output file:
 w = open(scan_out_path, 'w')
+
+# create progress bar
+widgets = ['Test: ', Percentage(), ' ', Bar(marker='0',left='[',right=']'),
+           ' ', ETA(), ' ', FileTransferSpeed()] #see docs for other options
+
 
 with open(myfasta, 'r') as forward_fasta:
 
     for cur_record in SeqIO.parse(forward_fasta, "fasta") :
-
         ### get info about fasta files like name and sequence
         #read_name = cur_record.name #this reads fasta header (not reliable)
         seq = cur_record.seq
@@ -390,8 +401,13 @@ with open(myfasta, 'r') as forward_fasta:
 
 
     ##### Main routine using defined functions: ##########################################
-
+    ### Figure out length progress bar
+        pbar = ProgressBar(widgets=widgets, max_value=int(length))
+        print(int(length/step_size))
+        pbar.start()
         while i == 0 or i <= (length - window_size):
+            #print(i)
+            pbar.update(i)
             start_nucleotide = i + 1 # This will just define the start nucleotide coordinate value
             frag = seq[i:i+int(window_size)] # This breaks up sequence into fragments
             #print(frag)
@@ -499,6 +515,7 @@ write_fai(seq, fasta_index, name)
 url = str(callbackurl+"/"+str(nodeid)+"/0")
 response = requests.get(url)
 print(url)
+pbar.finish()
 
 print("ScanFold-Scan complete, find output files below")
 print("Mean MFE = "+str(mean_MFE))
