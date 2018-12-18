@@ -347,13 +347,19 @@ def scramble(text, randomizations, type):
 
     return frag_seqs;
 
+def write_wig(metric_list, step, name, outputfilename):
+    w = open(outputfilename, 'w')
+    w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start=1", "step="+str(step), "span="+str(step)))
+    for metric in metric_list:
+        w.write("%f\n" % (metric))
+
 ##################### Main Script #########################################
 
 ### Initialize the bigwig files
-MFE_wig = pyBigWig.open(mfe_wig_file_path, 'w')
-zscore_wig = pyBigWig.open(zscore_wig_file_path, 'w')
-pvalue_wig = pyBigWig.open(pvalue_wig_file_path, 'w')
-ED_wig = pyBigWig.open(ed_wig_file_path, 'w')
+# MFE_wig = pyBigWig.open(mfe_wig_file_path, 'w')
+# zscore_wig = pyBigWig.open(zscore_wig_file_path, 'w')
+# pvalue_wig = pyBigWig.open(pvalue_wig_file_path, 'w')
+# ED_wig = pyBigWig.open(ed_wig_file_path, 'w')
 
 
 
@@ -374,14 +380,14 @@ with open(myfasta, 'r') as forward_fasta:
         length = len(seq)
         record_name = name
 
-        ### Add headers for bigwig files
-        """ Headers need to have the name and length of fasta sequence
-        Should be set up like XYZ_wig.addHeader("chromosomeName", length)
-        """
-        MFE_wig.addHeader([(str(record_name), int(length))])
-        zscore_wig.addHeader([(str(record_name), int(length))])
-        pvalue_wig.addHeader([(str(record_name), int(length))])
-        ED_wig.addHeader([(str(record_name), int(length))])
+        # ### Add headers for bigwig files
+        # """ Headers need to have the name and length of fasta sequence
+        # Should be set up like XYZ_wig.addHeader("chromosomeName", length)
+        # """
+        # MFE_wig.addHeader([(str(record_name), int(length))])
+        # zscore_wig.addHeader([(str(record_name), int(length))])
+        # pvalue_wig.addHeader([(str(record_name), int(length))])
+        # ED_wig.addHeader([(str(record_name), int(length))])
 
         ### Create list for metrics to be written to bw via pyBigWig
         MFE_list = []
@@ -501,15 +507,20 @@ with open(myfasta, 'r') as forward_fasta:
 
 
 ### Add each metric from lists to bw file
-MFE_wig.addEntries(record_name, 1,  values=MFE_list, span=step_size, step=step_size)
-zscore_wig.addEntries(record_name, 1,  values=zscore_list, span=step_size, step=step_size)
-pvalue_wig.addEntries(record_name, 1,  values=pscore_list, span=step_size, step=step_size)
-ED_wig.addEntries(record_name, 1,  values=ED_list, span=step_size, step=step_size)
+# MFE_wig.addEntries(record_name, 1,  values=MFE_list, span=step_size-1, step=step_size)
+# zscore_wig.addEntries(record_name, 1,  values=zscore_list, span=step_size-1, step=step_size)
+# pvalue_wig.addEntries(record_name, 1,  values=pscore_list, span=step_size-1, step=step_size)
+# ED_wig.addEntries(record_name, 1,  values=ED_list, span=step_size-1, step=step_size)
+#
+# MFE_wig.close()
+# zscore_wig.close()
+# pvalue_wig.close()
+# ED_wig.close()
 
-MFE_wig.close()
-zscore_wig.close()
-pvalue_wig.close()
-ED_wig.close()
+write_wig(MFE_list, step_size, name, mfe_wig_file_path)
+write_wig(zscore_list, step_size, name, zscore_wig_file_path)
+write_wig(pscore_list, step_size, name, pvalue_wig_file_path)
+write_wig(ED_list, step_size, name, ed_wig_file_path)
 
 write_fasta(seq, fasta_file_path, name)
 write_fai(seq, fasta_index, name)
