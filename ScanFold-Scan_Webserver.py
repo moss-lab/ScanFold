@@ -56,6 +56,8 @@ parser.add_argument('--print_random', type=str, default='off',
                     help='print to screen option (default off)')
 parser.add_argument('--name', type=str, default = "UserInput",
                     help='name of data being analyzed')
+parser.add_argument('--split', type=str, default = "off",
+                    help='name of data being analyzed')
 
 ###Required arguments for webserver:
 parser.add_argument('--scan_out_path', type=str,
@@ -105,6 +107,7 @@ fasta_index = args.fasta_index
 nodeid = args.nodeid
 callbackurl = args.callbackurl
 
+split = args.split
 
 #### Defining global variables ###############
 
@@ -512,10 +515,13 @@ write_fasta(seq, fasta_file_path, name)
 write_fai(seq, fasta_index, name)
 
 
-url = str(callbackurl+"/"+str(nodeid)+"/0")
-response = requests.get(url)
-print(url)
-pbar.finish()
+if split == "off":
+    url = str(callbackurl+"/"+str(nodeid)+"/0")
+    response = requests.get(url)
+    # print(url)
+
+if split == "on":
+    print("Completed ScanFold-Scan, intial results shown below.\n ScanFold-Fold is running now")
 
 print("ScanFold-Scan complete, find output files below")
 print("Mean MFE = "+str(mean_MFE))
