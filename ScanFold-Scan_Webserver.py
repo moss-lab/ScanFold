@@ -358,8 +358,8 @@ ED_wig = pyBigWig.open(ed_wig_file_path, 'w')
 w = open(scan_out_path, 'w')
 
 # create progress bar
-widgets = ['Test: ', Percentage(), ' ', Bar(marker='0',left='[',right=']'),
-           ' ', ETA(), ' ', FileTransferSpeed()] #see docs for other options
+# widgets = ['Test: ', Percentage(), ' ', Bar(marker='0',left='[',right=']'),
+#            ' ', ETA(), ' ', FileTransferSpeed()] #see docs for other options
 
 
 with open(myfasta, 'r') as forward_fasta:

@@ -388,32 +388,49 @@ def write_dp(base_pair_dictionary, filename, filter):
 def write_bp(base_pair_dictionary, filename):
     w = open(filename, 'w')
         #set color for bp file (igv format)
-    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 0, 255, 0, str("Less than -2 "+str(minz))))
-    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 0, 94, 255, "-1 to -2"))
-    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 55, 129, 255, "0 to -1"))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 55, 129, 255, str("Less than -2 "+str(minz))))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 89, 222, 111, "-1 to -2"))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 236, 236, 136, "0 to -1"))
     w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 199, 199, 199, "0"))
     w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 228, 228, 228, "0 to 1"))
     w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 243, 243, 243, "1 to 2"))
-    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 247, 247, 247, str("Greater than 2 "+str(minz))))
+    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 247, 247, 247, str("Greater than 2")))
 
     for k, v in base_pair_dictionary.items():
         #choose color
-        if int(v.zscore) < int(-2):
+        if float(v.zscore) < float(-2):
+            score = str(0)
+            print(k, v.zscore, score)
+
+        elif (float(v.zscore) < int(-1)) and (float(v.zscore) >= -2):
             score = str(1)
-        if -1 > int(v.zscore) >= -2:
+            print(k, v.zscore, score)
+
+        elif (float(v.zscore) < int(0)) and (float(v.zscore) >= -1):
             score = str(2)
-        if 0 > int(v.zscore) >= -1:
+            print(k, v.zscore, score)
+
+        elif float(v.zscore) == 0 :
             score = str(3)
-        if int(v.zscore) == 0 :
+            print(k, v.zscore, score)
+
+        elif 0 < float(v.zscore) <= 1:
             score = str(4)
-        if 0 < int(v.zscore) <= 1:
+            print(k, v.zscore, score)
+
+        elif 1 < float(v.zscore) <= 2:
             score = str(5)
-        if 1 < int(v.zscore) <= 2:
+            print(k, v.zscore, score)
+
+        elif float(v.zscore) > 2:
             score = str(6)
-        if int(v.zscore) > 2:
-            score = str(7)
+            print(k, v.zscore, score)
+
         else:
-            print("1 Error at: ", k)
+            print(k, v.zscore, score)
+
+
+        score = str(score)
 
         if int(v.icoordinate) < int(v.jcoordinate):
             #w.write("%d\t%d\t%f\n" % (k, int(v.jcoordinate), float(-(math.log10(probability)))))
@@ -974,7 +991,7 @@ if competition == 1:
                                         best_bps[k].ed)
             #print("No competing pair found for ", k)
             continue
-    write_bp(final_partners, "final_partners_test.bp")
+
 
 if competition == 0:
     elapsed_time = str(round((time.time() - start_time), 2))+"s"
@@ -1023,5 +1040,5 @@ if competition == 1:
     os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
     os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
     os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
-
+    write_bp(final_partners, "final_partners_test.bp")
     print("ScanFold-Fold complete, find results in...")
