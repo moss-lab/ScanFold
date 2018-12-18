@@ -56,6 +56,8 @@ parser.add_argument('-f', type=int, default=-2,
                     help='filter value')
 parser.add_argument('-c', type=int, default=1,
                     help='Competition')
+
+### Required for spinoff ###
 parser.add_argument('--out1', type=str,
                     help='out1 path')
 parser.add_argument('--out2', type=str,
@@ -444,7 +446,8 @@ def write_fasta(nucleotide_dictionary, outputfilename, name):
     w.write(">"+name+"\n")
     w.write(str(fasta_sequence))
 
-def write_bp(base_pair_dictionary, filename):
+def write_bp(base_pair_dictionary, filename, start_coordinate):
+
     w = open(filename, 'w')
         #set color for bp file (igv format)
     w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 55, 129, 255, str("Less than -2 "+str(minz))))
@@ -455,6 +458,7 @@ def write_bp(base_pair_dictionary, filename):
     w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 243, 243, 243, "1 to 2"))
     w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 247, 247, 247, str("Greater than 2")))
 
+    i = 0
     for k, v in base_pair_dictionary.items():
         #choose color
         if float(v.zscore) < float(-2):
@@ -491,13 +495,24 @@ def write_bp(base_pair_dictionary, filename):
 
         score = str(score)
 
+        # ensure coordinates to start at 1 to match with converted fasta file
+        sc = int(int(start_coordinate)-1)
+        print(length)
+
+
         if int(v.icoordinate) < int(v.jcoordinate):
             #w.write("%d\t%d\t%f\n" % (k, int(v.jcoordinate), float(-(math.log10(probability)))))
-            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
+            # print(name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score)
+            # print(name, str(int(v.icoordinate)-sc), str(int(v.icoordinate)-sc), str(int(v.jcoordinate)-sc), str(int(v.jcoordinate)-sc), score)
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, int(v.icoordinate)-sc, int(v.icoordinate)-sc, int(v.jcoordinate)-sc, int(v.jcoordinate)-sc, score))
         elif int(v.icoordinate) > int(v.jcoordinate):
-            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
+            # print(name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score)
+            # print(name, str(int(v.icoordinate)-sc), str(int(v.icoordinate)-sc), str(int(v.jcoordinate)-sc), str(int(v.jcoordinate)-sc), score)
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, int(v.icoordinate)-sc, int(v.icoordinate)-sc, int(v.jcoordinate)-sc, int(v.jcoordinate)-sc, score))
         elif int(v.icoordinate) == int(v.jcoordinate):
-            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, k, k, int(v.jcoordinate), int(v.jcoordinate), score))
+            # print(name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score)
+            # print(name, str(int(v.icoordinate)-sc), str(int(v.icoordinate)-sc), str(int(v.jcoordinate)-sc), str(int(v.jcoordinate)-sc), score)
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, k-sc, k-sc, int(v.jcoordinate)-sc, int(v.jcoordinate)-sc, score))
         else:
             print("2 Error at:", k)
 
@@ -1102,9 +1117,9 @@ url = str(callbackurl+"/"+str(nodeid)+"/0")
 print(url)
 response = requests.get(url)
 if competition == 1:
-    write_bp(final_partners, out6)
+    write_bp(final_partners, out6, start_coordinate)
 if competition == 0:
-    write_bp(best_bps, out6)
+    write_bp(best_bps, out6, start_coordinate)
 write_fasta(nuc_dict, out7, name)
 write_fai(nuc_dict, fasta_index_path, name)
 print("ScanFold-Fold complete, find results in...")
