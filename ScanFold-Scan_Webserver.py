@@ -31,7 +31,7 @@ import multiprocessing
 import requests
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from Bio import SeqIO
-from progressbar import *               # just a simple progress bar
+# from progressbar import *               # just a simple progress bar
 
 
 
@@ -402,12 +402,12 @@ with open(myfasta, 'r') as forward_fasta:
 
     ##### Main routine using defined functions: ##########################################
     ### Figure out length progress bar
-        pbar = ProgressBar(widgets=widgets, max_value=int(length))
-        print(int(length/step_size))
-        pbar.start()
+        # pbar = ProgressBar(widgets=widgets, max_value=int(length))
+        # print(int(length/step_size))
+        # pbar.start()
         while i == 0 or i <= (length - window_size):
             #print(i)
-            pbar.update(i)
+            # pbar.update(i)
             start_nucleotide = i + 1 # This will just define the start nucleotide coordinate value
             frag = seq[i:i+int(window_size)] # This breaks up sequence into fragments
             #print(frag)
