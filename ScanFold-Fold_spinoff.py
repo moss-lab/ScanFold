@@ -497,7 +497,7 @@ def write_bp(base_pair_dictionary, filename, start_coordinate):
 
         # ensure coordinates to start at 1 to match with converted fasta file
         sc = int(int(start_coordinate)-1)
-        print(length)
+        #print(length)
 
 
         if int(v.icoordinate) < int(v.jcoordinate):
