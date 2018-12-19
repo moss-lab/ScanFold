@@ -80,7 +80,7 @@ parser.add_argument('--fasta_index', type=str,
                     help='fasta index file path')
 parser.add_argument('--name', type=str, default = "UserInput",
                     help='name of data being analyzied')
-parser.add_argument('--final_parters_wig', type=str,
+parser.add_argument('--final_partners_wig', type=str,
                     help='final partners wig file path')
 
 
