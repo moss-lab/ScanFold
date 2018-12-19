@@ -96,7 +96,7 @@ out5 = args.out5
 out6 = args.out6
 out7 = args.out7
 name = args.name
-final_partners_wig = args.final_parnters_wig
+final_partners_wig = args.final_partners_wig
 
 fasta_index_path = args.fasta_index
 nodeid = args.nodeid
@@ -1133,7 +1133,7 @@ url = str(callbackurl+"/"+str(nodeid)+"/0")
 response = requests.get(url)
 if competition == 1:
     write_bp(final_partners, out6, start_coordinate)
-    write_wig_dict(final_partners, final_parnters_wig, name)
+    write_wig_dict(final_partners, final_partners_wig, name)
 if competition == 0:
     write_bp(best_bps, out6, start_coordinate)
 write_fasta(nuc_dict, out7, name)
