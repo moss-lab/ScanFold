@@ -15,7 +15,7 @@ the entirity of the scanning window results into a single structure. Only the
 most unusually stable base pairs will be reported.
 
 Usage:
-ScanFold-Fold_spinoff.py -i test_3loes.tsv --out1 ./nofilter --out2 ./-1scanfold --out3 ./-2scanfold --out4 ./log_file --out5 ./final_partner_log --out6 ./bp_track --out7 ./fasta.fa --fasta_index ./fasta.fa.fai --final_parters_wig ./fp.wig --nodeid "/scholar" --callbackurl "https://www.google.com"
+ScanFold-Fold_spinoff.py -i test_3loes.tsv --out1 ./nofilter --out2 ./-1scanfold --out3 ./-2scanfold --out4 ./log_file --out5 ./final_partner_log --out6 ./bp_track --out7 ./fasta.fa --fasta_index ./fasta.fa.fai --final_partners_wig ./fp.wig --nodeid "/scholar" --callbackurl "https://www.google.com"
 
     1. Name of output file from ScanFold-Scan
 
@@ -67,7 +67,7 @@ parser.add_argument('--out3', type=str,
 parser.add_argument('--out4', type=str,
                     help='log_file path')
 parser.add_argument('--out5', type=str,
-                    help='final_parter_file path')
+                    help='final_partner_file path')
 parser.add_argument('--out6', type=str,
                     help='bp_track_file path')
 parser.add_argument('--out7', type=str,
@@ -1133,7 +1133,7 @@ url = str(callbackurl+"/"+str(nodeid)+"/0")
 response = requests.get(url)
 if competition == 1:
     write_bp(final_partners, out6, start_coordinate)
-    write_wig_dict(final_partners, final_parters_wig, name)
+    write_wig_dict(final_partners, final_parnters_wig, name)
 if competition == 0:
     write_bp(best_bps, out6, start_coordinate)
 write_fasta(nuc_dict, out7, name)
