@@ -96,7 +96,7 @@ out5 = args.out5
 out6 = args.out6
 out7 = args.out7
 name = args.name
-final_parters_wig = args.final_parters_wig
+final_partners_wig = args.final_parnters_wig
 
 fasta_index_path = args.fasta_index
 nodeid = args.nodeid
