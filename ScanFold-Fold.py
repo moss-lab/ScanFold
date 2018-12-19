@@ -33,7 +33,6 @@ Output:
       of all nucleotides and their predicted base pairing partners; 2. a list of
       the most favorable base pairs.
       
-      Also, much 
 
 """
 
