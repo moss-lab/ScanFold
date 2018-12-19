@@ -1,6 +1,6 @@
 # ScanFold
 
-The ScanFold pipeline is a set of scripts which scan (using ScanFold-Scan.py) a large RNA sequence and subsequently extract (using ScanFold-Fold.py) structural motifs which have evidence of being ordered by evolution (potentially to serve a functional role).  
+The ScanFold pipeline is a set of scripts which scan a large RNA sequence (using ScanFold-Scan.py) and subsequently extract  structural motifs (using ScanFold-Fold.py) which have evidence of being ordered by evolution (potentially to serve a functional role).  
 
 The ScanFold-Scan.py and ScanFold-Fold.py scripts were built using Python3.6 and utilize several outside python modules.
 
