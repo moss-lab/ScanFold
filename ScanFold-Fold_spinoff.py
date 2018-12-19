@@ -15,7 +15,7 @@ the entirity of the scanning window results into a single structure. Only the
 most unusually stable base pairs will be reported.
 
 Usage:
-ScanFold-Fold_spinoff.py -i test_3loes.tsv --out1 ./nofilter --out2 ./-1scanfold --out3 ./-2scanfold --out4 ./log_file --out5 ./final_partner_log --out6 ./bp_track --out7 ./fasta --fasta_index ./fai --nodeid "/scholar" --callbackurl "https://www.google.com"
+ScanFold-Fold_spinoff.py -i test_3loes.tsv --out1 ./nofilter --out2 ./-1scanfold --out3 ./-2scanfold --out4 ./log_file --out5 ./final_partner_log --out6 ./bp_track --out7 ./fasta.fa --fasta_index ./fasta.fa.fai --final_parters_wig ./fp.wig --nodeid "/scholar" --callbackurl "https://www.google.com"
 
     1. Name of output file from ScanFold-Scan
 
@@ -80,6 +80,9 @@ parser.add_argument('--fasta_index', type=str,
                     help='fasta index file path')
 parser.add_argument('--name', type=str, default = "UserInput",
                     help='name of data being analyzied')
+parser.add_argument('--final_parters_wig', type=str,
+                    help='final partners wig file path')
+
 
 args = parser.parse_args()
 filename = args.input
@@ -93,9 +96,12 @@ out5 = args.out5
 out6 = args.out6
 out7 = args.out7
 name = args.name
+final_parters_wig = args.final_parters_wig
+
 fasta_index_path = args.fasta_index
 nodeid = args.nodeid
 callbackurl = args.callbackurl
+
 
 try:
     options = str(sys.argv[3])
@@ -445,6 +451,16 @@ def write_fasta(nucleotide_dictionary, outputfilename, name):
 
     w.write(">"+name+"\n")
     w.write(str(fasta_sequence))
+
+def write_wig_dict(nucleotide_dictionary, outputfilename, name):
+
+    w = open(outputfilename, 'w')
+    #write wig file header
+    w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start=1", "step=1", "span=1"))
+
+    #write values of zscores
+    for k, v in nucleotide_dictionary.items():
+        w.write("%f\n" % (v.zscore))
 
 def write_bp(base_pair_dictionary, filename, start_coordinate):
 
@@ -1114,12 +1130,13 @@ if competition == 1:
     # os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
     # os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
 url = str(callbackurl+"/"+str(nodeid)+"/0")
-print(url)
 response = requests.get(url)
 if competition == 1:
     write_bp(final_partners, out6, start_coordinate)
+    write_wig_dict(final_partners, final_parters_wig, name)
 if competition == 0:
     write_bp(best_bps, out6, start_coordinate)
 write_fasta(nuc_dict, out7, name)
 write_fai(nuc_dict, fasta_index_path, name)
 print("ScanFold-Fold complete, find results in...")
+print(url)
