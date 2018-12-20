@@ -456,7 +456,7 @@ def write_wig_dict(nucleotide_dictionary, outputfilename, name):
 
     w = open(outputfilename, 'w')
     #write wig file header
-    w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start=1", "step=1", "span=1"))
+    w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start=0", "step=1", "span=1"))
 
     #write values of zscores
     for k, v in nucleotide_dictionary.items():
