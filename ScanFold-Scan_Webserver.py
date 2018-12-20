@@ -349,7 +349,7 @@ def scramble(text, randomizations, type):
 
 def write_wig(metric_list, step, name, outputfilename):
     w = open(outputfilename, 'w')
-    w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start=1", "step="+str(step), "span="+str(step)))
+    w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start=0", "step="+str(step), "span="+str(step)))
     for metric in metric_list:
         w.write("%f\n" % (metric))
 
