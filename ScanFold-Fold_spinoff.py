@@ -98,6 +98,7 @@ out5 = args.out5
 out6 = args.out6
 out7 = args.out7
 name = args.name
+dbn_file_path = args.dbn_file_path
 final_partners_wig = args.final_partners_wig
 
 fasta_index_path = args.fasta_index
