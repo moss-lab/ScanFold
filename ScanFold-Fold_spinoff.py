@@ -1115,7 +1115,7 @@ if competition == 1:
     write_ct(final_partners, out3, float(-2), strand)
 
     #Create a dbn file for forna
-    #os.system(str("ct2dot "+out3+" 1 "+out8))
+    os.system(str("ct2dot "+out3+" 1 "+dbn_file_path))
 
     # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
     # write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
