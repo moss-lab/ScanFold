@@ -72,6 +72,8 @@ parser.add_argument('--out6', type=str,
                     help='bp_track_file path')
 parser.add_argument('--out7', type=str,
                     help='fasta_file path')
+parser.add_argument('--dbn_file_path'), type=str,
+                    help='dbn_file path')
 parser.add_argument('--nodeid', type=str,
                     help='node id')
 parser.add_argument('--callbackurl', type=str,
@@ -1111,6 +1113,10 @@ if competition == 1:
     write_ct(final_partners, out1, float(10), strand)
     write_ct(final_partners, out2, float(-1), strand)
     write_ct(final_partners, out3, float(-2), strand)
+
+    #Create a dbn file for forna
+    #os.system(str("ct2dot "+out3+" 1 "+out8))
+
     # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
     # write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
     # write_ct(final_partners, output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand)
@@ -1123,7 +1129,6 @@ if competition == 1:
     # print("Elapsed time: "+elapsed_time)
     # os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
     # os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
-    # os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
     # if filter != None:
     #     os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
     # os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
