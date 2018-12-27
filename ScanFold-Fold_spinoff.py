@@ -340,6 +340,7 @@ def best_basepair(bp_dict, nucleotide, coordinate, type):
 def write_ct(base_pair_dictionary, filename, filter, strand):
     #Function to write connectivity table files from a list of best i-j pairs
     w = open(filename, 'w')
+    w.write((str(len(base_pair_dictionary))+"\t"+name+"\n"))
     if strand == 1:
         for k, v in base_pair_dictionary.items():
             #print(start_coordinate)
@@ -1114,8 +1115,8 @@ if competition == 1:
     # write_ct(final_partners, output+"no_filter.ct", float(10), strand)
     # write_ct(final_partners, output+"-1.ct", float(-1), strand)
     # write_ct(final_partners, output+"-2.ct", float(-2), strand)
-    if filter != None or filter != -2:
-        write_ct(final_partners, output+str(filter)+".ct", filter, strand)
+    # if filter != None or filter != -2:
+    #     write_ct(final_partners, output+str(filter)+".ct", filter, strand)
     write_ct(final_partners, out1, float(10), strand)
     write_ct(final_partners, out2, float(-1), strand)
     write_ct(final_partners, out3, float(-2), strand)
