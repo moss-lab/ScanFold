@@ -30,6 +30,11 @@ import RNA
 import random
 import multiprocessing
 import requests
+
+# temporary fix to disable warning about ssl
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from Bio import SeqIO
 # from progressbar import *               # just a simple progress bar
