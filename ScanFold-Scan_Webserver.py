@@ -20,7 +20,8 @@ import time
 import sys
 import argparse
 import string
-import pyBigWig
+# not needed anymore 
+# import pyBigWig
 import re
 import numpy as np
 sys.path.append('/home/randrews/ViennaRNA/lib/python3.6/site-packages/')
