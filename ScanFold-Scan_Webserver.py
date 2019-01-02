@@ -531,7 +531,7 @@ write_fai(seq, fasta_index, name)
 
 if split == "off":
     url = str(callbackurl+"/"+str(nodeid)+"/0")
-    response = requests.get(url)
+    response = requests.get(url, verify=False)
     # print(url)
 
 if split == "on":
