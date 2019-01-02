@@ -561,8 +561,8 @@ with open(filename, 'r') as f:
     #Generate nucleotide dictionary to assign each nucleotide in sequence a key
     nuc_dict = NucleotideDictionary(lines)
     print("Sequence length: "+str(len(nuc_dict))+"nt")
-    if len(nuc_dict) > 1000:
-        raise SystemExit('Input sequence is longer than 1000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
+    # if len(nuc_dict) > 1000:
+    #     raise SystemExit('Input sequence is longer than 1000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
 
     #Determine start and end coordinate values
     start_coordinate = str(list(nuc_dict.keys())[0])
