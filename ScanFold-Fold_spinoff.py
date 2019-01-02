@@ -15,7 +15,7 @@ the entirity of the scanning window results into a single structure. Only the
 most unusually stable base pairs will be reported.
 
 Usage:
-ScanFold-Fold_spinoff.py -i test_3loes.tsv --out1 ./nofilter --out2 ./-1scanfold --out3 ./-2scanfold --out4 ./log_file --out5 ./final_partner_log --out6 ./bp_track --out7 ./fasta.fa --fasta_index ./fasta.fa.fai --final_partners_wig ./fp.wig --nodeid "/scholar" --callbackurl "https://www.google.com"
+ScanFold-Fold_spinoff.py -i out.tsv --out1 ./nofilter.ct --out2 ./scanfold-1.ct --out3 ./scanfold-2.ct --out4 ./log_file --out5 ./final_partner_log --out6 ./bp_track --out7 ./fasta.fa --fasta_index ./fasta.fa.fai --final_partners_wig ./fp.wig --nodeid "/scholar" --callbackurl "https://www.google.com"
 
     1. Name of output file from ScanFold-Scan
 
@@ -561,6 +561,8 @@ with open(filename, 'r') as f:
     #Generate nucleotide dictionary to assign each nucleotide in sequence a key
     nuc_dict = NucleotideDictionary(lines)
     print("Sequence length: "+str(len(nuc_dict))+"nt")
+    if len(nuc_dict) > 1000:
+        raise SystemExit('Input sequence is longer than 1000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
 
     #Determine start and end coordinate values
     start_coordinate = str(list(nuc_dict.keys())[0])
@@ -926,7 +928,7 @@ log_win.write("\ni\tbp(i)\tbp(j)\tavgMFE\tavgZ\tavgED"
 
 #Iterate through round 1 i-j pairs
 if competition == 1:
-    print(start_coordinate, end_coordinate)
+    #print(start_coordinate, end_coordinate)
     print("Detecting competing pairs...")
     j_coord_list = []
     # for k, v in sorted(best_bps.items()):
@@ -1117,7 +1119,7 @@ if competition == 1:
     write_ct(final_partners, out3, float(-2), strand)
 
     #Create a dbn file for forna
-    os.system(str("ct2dot "+out3+" 1 "+dbn_file_path))
+    os.system(str("ct2dot "+str(out3)+" 1 "+str(dbn_file_path)))
 
     # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
     # write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
@@ -1145,5 +1147,5 @@ if competition == 0:
     write_bp(best_bps, out6, start_coordinate)
 write_fasta(nuc_dict, out7, name)
 write_fai(nuc_dict, fasta_index_path, name)
-print("ScanFold-Fold complete, find results in...")
-print(url)
+print("ScanFold-Fold analysis complete! Refresh page to ensure proper loading of IGV")
+#print(url)
