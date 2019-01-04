@@ -20,7 +20,8 @@ import time
 import sys
 import argparse
 import string
-import pyBigWig
+# not needed anymore 
+# import pyBigWig
 import re
 import numpy as np
 sys.path.append('/home/randrews/ViennaRNA/lib/python3.6/site-packages/')
@@ -29,6 +30,11 @@ import RNA
 import random
 import multiprocessing
 import requests
+
+# temporary fix to disable warning about ssl
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from Bio import SeqIO
 # from progressbar import *               # just a simple progress bar

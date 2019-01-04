@@ -44,6 +44,11 @@ from itertools import repeat
 from functools import partial
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import requests
+
+# temporary fix to disable ssl warning
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 #import urllib2
 
 start_time = time.time()
