@@ -20,7 +20,7 @@ import time
 import sys
 import argparse
 import string
-# not needed anymore 
+# not needed anymore
 # import pyBigWig
 import re
 import numpy as np
@@ -383,9 +383,9 @@ with open(myfasta, 'r') as forward_fasta:
         ### get info about fasta files like name and sequence
         #read_name = cur_record.name #this reads fasta header (not reliable)
         seq = cur_record.seq
-        if len(seq) > 1000 :
+        if len(seq) > 20000 :
             print(str(len(seq)))
-            raise SystemExit('Input sequence is longer than 1000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
+            raise SystemExit('Input sequence is longer than 20000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
         length = len(seq)
         record_name = name
 
