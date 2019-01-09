@@ -39,9 +39,6 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from Bio import SeqIO
 # from progressbar import *               # just a simple progress bar
 
-
-
-
 #### Parsing arguments ####
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', type=str, required=True,
@@ -376,155 +373,258 @@ w = open(scan_out_path, 'w')
 # widgets = ['Test: ', Percentage(), ' ', Bar(marker='0',left='[',right=']'),
 #            ' ', ETA(), ' ', FileTransferSpeed()] #see docs for other options
 
-
-with open(myfasta, 'r') as forward_fasta:
-
-    for cur_record in SeqIO.parse(forward_fasta, "fasta") :
-        ### get info about fasta files like name and sequence
-        #read_name = cur_record.name #this reads fasta header (not reliable)
-        seq = cur_record.seq
-        if len(seq) > 20000 :
-            print(str(len(seq)))
-            raise SystemExit('Input sequence is longer than 20000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
-        length = len(seq)
-        record_name = name
-
-        # ### Add headers for bigwig files
-        # """ Headers need to have the name and length of fasta sequence
-        # Should be set up like XYZ_wig.addHeader("chromosomeName", length)
-        # """
-        # MFE_wig.addHeader([(str(record_name), int(length))])
-        # zscore_wig.addHeader([(str(record_name), int(length))])
-        # pvalue_wig.addHeader([(str(record_name), int(length))])
-        # ED_wig.addHeader([(str(record_name), int(length))])
-
-        ### Create list for metrics to be written to bw via pyBigWig
-        MFE_list = []
-        zscore_list = []
-        pscore_list = []
-        ED_list = []
+### Create list for metrics to be written to bw via pyBigWig
+MFE_list = []
+zscore_list = []
+pscore_list = []
+ED_list = []
 
 
-        ##### Establish empty lists to capture calculated metrics per window ######
-        zscore_total = []
-        numerical_z = []
-        pscore_total = []
-        numerical_p = []
-        MFE_total = []
-        ED_total = []
+##### Establish empty lists to capture calculated metrics per window ######
+zscore_total = []
+numerical_z = []
+pscore_total = []
+numerical_p = []
+MFE_total = []
+ED_total = []
 
-        ### Write the header for output:
-        w.write("i\tj\tTemperature\tNative_dG\tZ-score\tP-score\tEnsembleDiversity\tSequence\tStructure\tCentroid\t"+record_name+"\n")
-        i = 0
+# with open(myfasta, 'r') as forward_fasta:
+with open (myfasta, 'r') as forward_fasta:
+    if '>' in forward_fasta.readlines()[0]:
+        print("Sequence in FASTA format...")
+        with open (myfasta, 'r') as forward_fasta:
+            for cur_record in SeqIO.parse(forward_fasta, "fasta"):
+                ### get info about fasta files like name and sequence
+                #read_name = cur_record.name #this reads fasta header (not reliable)
+                seq = cur_record.seq
+                print(str(seq))
+                print("Sequence Length: "+str(len(seq))+"nt")
+                number_windows = int(len(seq))/int(step_size)
+                print("Approximately "+str(int(number_windows))+" windows will be generated.")
+                print("Sequence being scanned...")
+                if len(seq) > 20000 :
+                    print(str(len(seq)))
+                    raise SystemExit('Input sequence is longer than 20000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
+                length = len(seq)
+                record_name = name
 
+                # ### Add headers for bigwig files
+                # """ Headers need to have the name and length of fasta sequence
+                # Should be set up like XYZ_wig.addHeader("chromosomeName", length)
+                # """
+                # MFE_wig.addHeader([(str(record_name), int(length))])
+                # zscore_wig.addHeader([(str(record_name), int(length))])
+                # pvalue_wig.addHeader([(str(record_name), int(length))])
+                # ED_wig.addHeader([(str(record_name), int(length))])
 
-    ##### Main routine using defined functions: ##########################################
-    ### Figure out length progress bar
-        # pbar = ProgressBar(widgets=widgets, max_value=int(length))
-        # print(int(length/step_size))
-        # pbar.start()
-        while i == 0 or i <= (length - window_size):
-            #print(i)
-            # pbar.update(i)
-            start_nucleotide = i + 1 # This will just define the start nucleotide coordinate value
-            frag = seq[i:i+int(window_size)] # This breaks up sequence into fragments
-            #print(frag)
-            #print(str(len(frag)))
-            start_nucleotide = i + 1
-            end_nucleotide = i + window_size
-            if -1 == 0:
-                print("Magic")
-            # if 'N' in frag:
-            #     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str(frag)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\n")
-            #     i += step_size #this ensures that the next iteration increases by "step size" length
-            else:
-                #print(start_nucleotide)
-                #print(end_nucleotide)
-                frag = frag.transcribe()
-                if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
-                    MFE = int(0.0)
-                    zscore = "00.00"
-                    ED = int(0.0)
-                    pscore = int(0.0)
-                    structure = "........................................................................................................................"
-                    centroid = "........................................................................................................................"
-                else:
-                    fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
-                    fc.pf() # performs partition function calculations
-                    frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
-                    (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
-                    MFE = round(MFE, 2)
-                    MFE_total.append(MFE)
-                    (centroid, distance) = fc.centroid() # calculate and define variables for centroid
-                    ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
-                    ED_total.append(ED)            #print(structure)
-                    #fmfe = fc.pbacktrack()
-                    #print(str(fmfe))
-                    seqlist = [] # creates the list we will be filling with sequence fragments
-                    seqlist.append(frag) # adds the native fragment to list
-                    scrambled_sequences = scramble(frag, randomizations, type)
-                    seqlist.extend(scrambled_sequences)
-                    energy_list = energies(seqlist)
-                    if print_random == "on":
-                        print(energy_list)
+                ### Write the header for output:
+                w.write("i\tj\tTemperature\tNative_dG\tZ-score\tP-score\tEnsembleDiversity\tSequence\tStructure\tCentroid\t"+record_name+"\n")
+                i = 0
+            ##### Main routine using defined functions: ##########################################
+            ### Figure out length progress bar
+                # pbar = ProgressBar(widgets=widgets, max_value=int(length))
+                # print(int(length/step_size))
+                # pbar.start()
+                while i == 0 or i <= (length - window_size):
+                    #print(i)
+                    # pbar.update(i)
+                    start_nucleotide = i + 1 # This will just define the start nucleotide coordinate value
+                    frag = seq[i:i+int(window_size)] # This breaks up sequence into fragments
+                    #print(frag)
+                    #print(str(len(frag)))
+                    start_nucleotide = i + 1
+                    end_nucleotide = i + window_size
+                    if -1 == 0:
+                        print("Magic")
+                    # if 'N' in frag:
+                    #     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str(frag)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\n")
+                    #     i += step_size #this ensures that the next iteration increases by "step size" length
+                    else:
+                        #print(start_nucleotide)
+                        #print(end_nucleotide)
+                        frag = frag.transcribe()
+                        if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
+                            MFE = int(0.0)
+                            zscore = "00.00"
+                            ED = int(0.0)
+                            pscore = int(0.0)
+                            structure = "........................................................................................................................"
+                            centroid = "........................................................................................................................"
+                        else:
+                            fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
+                            fc.pf() # performs partition function calculations
+                            frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
+                            (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
+                            MFE = round(MFE, 2)
+                            MFE_total.append(MFE)
+                            (centroid, distance) = fc.centroid() # calculate and define variables for centroid
+                            ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
+                            ED_total.append(ED)            #print(structure)
+                            #fmfe = fc.pbacktrack()
+                            #print(str(fmfe))
+                            seqlist = [] # creates the list we will be filling with sequence fragments
+                            seqlist.append(frag) # adds the native fragment to list
+                            scrambled_sequences = scramble(frag, randomizations, type)
+                            seqlist.extend(scrambled_sequences)
+                            energy_list = energies(seqlist)
+                            if print_random == "on":
+                                print(energy_list)
+                            try:
+                                zscore = round(zscore_function(energy_list, randomizations), 2)
+                            except:
+                                zscore = zscore_function(energy_list, randomizations)
+                            zscore_total.append(zscore)
+
+                            #print(zscore)
+                            pscore = round(pscore_function(energy_list, randomizations), 2)
+                            #print(pscore)
+                            pscore_total.append(pscore)
+
+            ### Append metrics to list ###
+                            MFE_list.append(MFE)
+                            zscore_list.append(zscore)
+                            pscore_list.append(pscore)
+                            ED_list.append(ED)
+
+                        if print_to_screen == 'on':
+                            print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                        w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                        #gff3file.write()
+                        #pscore_wig.write()
+                        #zscore_wig.write()
+                        #ED_wig.write()
+                        #MFE_wig.write()
+
+                        i += step_size #this ensures that the next iteration increases by "step size" length
+
+                for z in zscore_total:
                     try:
-                        zscore = round(zscore_function(energy_list, randomizations), 2)
-                    except:
-                        zscore = zscore_function(energy_list, randomizations)
-                    zscore_total.append(zscore)
+                        numerical_z.append(float(z))
+                    except ValueError:
+                        continue
 
-                    #print(zscore)
-                    pscore = round(pscore_function(energy_list, randomizations), 2)
-                    #print(pscore)
-                    pscore_total.append(pscore)
+                for p in pscore_total:
+                    try:
+                        numerical_p.append(float(p))
+                    except ValueError:
+                        continue
+                window_count = len(zscore_total)
 
-    ### Append metrics to list ###
-                    MFE_list.append(MFE)
-                    zscore_list.append(zscore)
-                    pscore_list.append(pscore)
-                    ED_list.append(ED)
+                mean_pscore = round(np.mean(numerical_p), 2)
+                mean_zscore = round(np.mean(numerical_z), 2)
+                mean_MFE = round(np.mean(MFE_total), 2)
+                mean_ED = round(np.mean(ED_total), 2)
 
-                if print_to_screen == 'on':
-                    print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
-                w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
-                #gff3file.write()
-                #pscore_wig.write()
-                #zscore_wig.write()
-                #ED_wig.write()
-                #MFE_wig.write()
+    else:
+        with open (myfasta, 'r') as forward_fasta:
+            print("Sequence not in FASTA format, attempting to convert. You can also resubmit sequence with a proper FASTA header (i.e. >SequenceName)")
+            raw_sequence = forward_fasta.read()
+            seq = re.sub("\n", "", raw_sequence.strip())
+            #print(seq)
+            print("Sequence Length: "+str(len(seq))+"nt")
+            number_windows = int(len(seq))/int(step_size)
+            print("Approximately "+str(int(number_windows))+" windows will be generated.")
+            print("Sequence being scanned...")
+            if len(seq) > 20000 :
+                print(str(len(seq)))
+                raise SystemExit('Input sequence is longer than 20000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
+            length = len(seq)
+            record_name = name
+            i = 0
+        ##### Main routine using defined functions: ##########################################
+        ### Figure out length progress bar
+            # pbar = ProgressBar(widgets=widgets, max_value=int(length))
+            # print(int(length/step_size))
+            # pbar.start()
+            while i == 0 or i <= (length - window_size):
+                #print(i)
+                # pbar.update(i)
+                start_nucleotide = i + 1 # This will just define the start nucleotide coordinate value
+                frag = seq[i:i+int(window_size)] # This breaks up sequence into fragments
+                #print(frag)
+                #print(str(len(frag)))
+                start_nucleotide = i + 1
+                end_nucleotide = i + window_size
+                if -1 == 0:
+                    print("Magic")
+                # if 'N' in frag:
+                #     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str(frag)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\n")
+                #     i += step_size #this ensures that the next iteration increases by "step size" length
+                else:
+                    #print(start_nucleotide)
+                    #print(end_nucleotide)
+                    # frag = frag.transcribe()
+                    if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
+                        MFE = int(0.0)
+                        zscore = "00.00"
+                        ED = int(0.0)
+                        pscore = int(0.0)
+                        structure = "........................................................................................................................"
+                        centroid = "........................................................................................................................"
+                    else:
+                        fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
+                        fc.pf() # performs partition function calculations
+                        frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
+                        (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
+                        MFE = round(MFE, 2)
+                        MFE_total.append(MFE)
+                        (centroid, distance) = fc.centroid() # calculate and define variables for centroid
+                        ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
+                        ED_total.append(ED)            #print(structure)
+                        #fmfe = fc.pbacktrack()
+                        #print(str(fmfe))
+                        seqlist = [] # creates the list we will be filling with sequence fragments
+                        seqlist.append(frag) # adds the native fragment to list
+                        scrambled_sequences = scramble(frag, randomizations, type)
+                        seqlist.extend(scrambled_sequences)
+                        energy_list = energies(seqlist)
+                        if print_random == "on":
+                            print(energy_list)
+                        try:
+                            zscore = round(zscore_function(energy_list, randomizations), 2)
+                        except:
+                            zscore = zscore_function(energy_list, randomizations)
+                        zscore_total.append(zscore)
 
-                i += step_size #this ensures that the next iteration increases by "step size" length
+                        #print(zscore)
+                        pscore = round(pscore_function(energy_list, randomizations), 2)
+                        #print(pscore)
+                        pscore_total.append(pscore)
 
-        for z in zscore_total:
-            try:
-                numerical_z.append(float(z))
-            except ValueError:
-                continue
+        ### Append metrics to list ###
+                        MFE_list.append(MFE)
+                        zscore_list.append(zscore)
+                        pscore_list.append(pscore)
+                        ED_list.append(ED)
 
-        for p in pscore_total:
-            try:
-                numerical_p.append(float(p))
-            except ValueError:
-                continue
-        window_count = len(zscore_total)
+                    if print_to_screen == 'on':
+                        print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                    w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                    #gff3file.write()
+                    #pscore_wig.write()
+                    #zscore_wig.write()
+                    #ED_wig.write()
+                    #MFE_wig.write()
 
-        mean_pscore = round(np.mean(numerical_p), 2)
-        mean_zscore = round(np.mean(numerical_z), 2)
-        mean_MFE = round(np.mean(MFE_total), 2)
-        mean_ED = round(np.mean(ED_total), 2)
+                    i += step_size #this ensures that the next iteration increases by "step size" length
 
+            for z in zscore_total:
+                try:
+                    numerical_z.append(float(z))
+                except ValueError:
+                    continue
 
+            for p in pscore_total:
+                try:
+                    numerical_p.append(float(p))
+                except ValueError:
+                    continue
+            window_count = len(zscore_total)
 
-### Add each metric from lists to bw file
-# MFE_wig.addEntries(record_name, 1,  values=MFE_list, span=step_size-1, step=step_size)
-# zscore_wig.addEntries(record_name, 1,  values=zscore_list, span=step_size-1, step=step_size)
-# pvalue_wig.addEntries(record_name, 1,  values=pscore_list, span=step_size-1, step=step_size)
-# ED_wig.addEntries(record_name, 1,  values=ED_list, span=step_size-1, step=step_size)
-#
-# MFE_wig.close()
-# zscore_wig.close()
-# pvalue_wig.close()
-# ED_wig.close()
+            mean_pscore = round(np.mean(numerical_p), 2)
+            mean_zscore = round(np.mean(numerical_z), 2)
+            mean_MFE = round(np.mean(MFE_total), 2)
+            mean_ED = round(np.mean(ED_total), 2)
 
 write_wig(MFE_list, step_size, name, mfe_wig_file_path)
 write_wig(zscore_list, step_size, name, zscore_wig_file_path)
@@ -543,8 +643,8 @@ if split == "off":
 if split == "on":
     print("Completed ScanFold-Scan, intial results shown below.\n ScanFold-Fold is running now")
 
-print("ScanFold-Scan complete, find output files below")
 print("Mean MFE = "+str(mean_MFE))
 print("Mean Z-score = "+str(mean_zscore))
 print("Mean P-value = "+str(mean_pscore))
 print("Mean Ensemble Diversity = "+str(mean_ED))
+print("ScanFold-Scan complete, find output files below")
