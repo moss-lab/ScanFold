@@ -46,13 +46,12 @@ from Bio import SeqIO
 #### Defining global variables ###############
 
 myfasta = sys.argv[1] #input filename
-interval = int(sys.argv[2])
-step_size = int(1)
-window_size = int(120)
-randomizations = int(50)
-temperature = int(37)
+step_size = int(sys.argv[2])
+window_size = int(sys.argv[3])
+randomizations = int(sys.argv[4])
+temperature = int(sys.argv[5])
 type = str("mono")
-w = open(myfasta+".interval_"+str(interval)+".txt", 'w')
+w = open(myfasta+".win_step_rand"+str(window_size)+"_"+str(step_size)+"_"str(randomizations_size)+".txt", 'w')
 #s = open("result_summary.forward."+myfasta+".win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
 #s.write("ReadName\tLength\tMeanMFE\tMeanZ\tMeanP\tMeanED\n")
 # r = open(myfasta+".reverse.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
@@ -312,7 +311,7 @@ with open(myfasta, 'r') as forward_fasta:
 
 
     ##### Main routine using defined functions: ##########################################
-            i = interval
+            i = 0
             while i == 0 or i <= (length - window_size):
                 start_nucleotide = i + 1 # This will just define the start nucleotide coordinate value
                 frag = seq[i:i+int(window_size)] # This breaks up sequence into fragments
