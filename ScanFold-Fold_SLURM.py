@@ -38,7 +38,7 @@ import re
 import numpy as np
 import os
 #sys.path.append('/Users/ryanandrews/Desktop/programs/RNAstructure/exe')
-import RNAstructure
+#import RNAstructure
 import time
 import argparse
 from itertools import repeat
@@ -46,7 +46,6 @@ from functools import partial
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 start_time = time.time()
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', type=str, required=True,
@@ -61,15 +60,8 @@ filename = args.input
 filter = int(args.f)
 competition = int(args.c)
 
-#print(options, filter)
-output_data = re.split('\.', str(filename))
-output = str(str(filename)+".ScanFold.")
-
-
 log_total = open(str(filename)+".ScanFold.log.txt", 'w')
 log_win = open(str(filename)+".ScanFold.final_partners.txt", 'w')
-
-
 
 class NucPair:
     #Class to define a base pair
@@ -1018,13 +1010,13 @@ if competition == 1:
     print("Writing CT files")
 
     if filter != None or filter != -2:
-        write_ct(final_partners, output+str(filter)+".ct", filter, strand)
-    write_ct(final_partners, output+"no_filter.ct", float(10), strand)
-    write_ct(final_partners, output+"-1.ct", float(-1), strand)
-    write_ct(final_partners, output+"-2.ct", float(-2), strand)
-    write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
-    write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
-    write_ct(final_partners, output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand)
+        write_ct(final_partners, filename+str(filter)+".ct", filter, strand)
+    write_ct(final_partners, filename+".no_filter.ct", float(10), strand)
+    write_ct(final_partners, filename+".-1.ct", float(-1), strand)
+    write_ct(final_partners, filename+".-2.ct", float(-2), strand)
+    write_ct(final_partners, filename+".below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
+    write_ct(final_partners, filename+".1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
+    write_ct(final_partners, filename+".2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand)
 
     # except:
     #     print("Couldn't pass -c option")
@@ -1032,13 +1024,13 @@ if competition == 1:
     #Write DBN files from CT files
     elapsed_time = str(round((time.time() - start_time), 2))+"s"
     print("Elapsed time: "+elapsed_time)
-    os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
-    os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
-    os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
-    if filter != None:
-        os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
-    os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
-    os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
-    os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
-    write_bp(final_partners, "final_partners_test.bp")
-    print("ScanFold-Fold complete, find results in...")
+    # os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
+    # os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
+    # os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
+    # if filter != None:
+    #     os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
+    # os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
+    # os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
+    # os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
+    # write_bp(final_partners, "final_partners_test.bp")
+    # print("ScanFold-Fold complete, find results in...")
