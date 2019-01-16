@@ -372,7 +372,7 @@ with open(myfasta, 'r') as forward_fasta:
                     #ED_wig.write()
                     #MFE_wig.write()
 
-                    i += 10 #this ensures that the next iteration increases by "step size" length
+                    i += step_size #this ensures that the next iteration increases by "step size" length
 
             #print(len(zscore_total))
             # for z in zscore_total:
