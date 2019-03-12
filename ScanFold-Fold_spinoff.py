@@ -928,8 +928,8 @@ print("Elapsed time: "+str(elapsed_time)+"s")
 
 #print header for fianl partener log file (log_win)
 log_win.write("\ni\tbp(i)\tbp(j)\tavgMFE\tavgZ\tavgED"
-    + "\t*Indicates most favorable bp has more favorable partner or is "
-    + "more likely to be unpaired (competing coordinates are reported)"+"\n")
+    + "\t*Indicates most favorable bp has competition; bp(j) has more favorable partner or is "
+    + "more likely to be unpaired"+"\n")
 
 #Iterate through round 1 i-j pairs
 if competition == 1:
