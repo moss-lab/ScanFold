@@ -15,7 +15,7 @@ the entirity of the scanning window results into a single structure. Only the
 most unusually stable base pairs will be reported.
 
 Usage:
-ScanFold-Fold_spinoff.py -i out.tsv --out1 ./nofilter.ct --out2 ./scanfold-1.ct --out3 ./scanfold-2.ct --out4 ./log_file --out5 ./final_partner_log --out6 ./bp_track --out7 ./fasta.fa --fasta_index ./fasta.fa.fai --final_partners_wig ./fp.wig --nodeid "/scholar" --callbackurl "https://www.google.com"
+ScanFold-Fold_spinoff.py -i out.tsv --out1 ./nofilter.ct --out2 ./scanfold-1.ct --out3 ./scanfold-2.ct --out4 ./log_file --out5 ./final_partner_log --out6 ./bp_track --out7 ./fasta.fa --dbn_file_path ./scanfold.dbn --fasta_index ./fasta.fa.fai --final_partners_wig ./fp.wig --nodeid "/scholar" --callbackurl "https://www.google.com"
 
     1. Name of output file from ScanFold-Scan
 
@@ -945,32 +945,35 @@ if competition == 1:
         test_k = int(k)
         #print(sum(test_k == int(v.jcoordinate) for v in best_bps.values()))
         if sum(test_k == int(v.jcoordinate) for v in best_bps.values()) >= 0:
-            keys = range(int(start_coordinate), int(end_coordinate))
-            # if (length) * 4 < int(int(end_coordinate) - int(start_coordinate) + 1):
-            #     keys = range(int(start_coordinate), int(end_coordinate))
+        ### Scan the entire dictionary:
+            #keys = range(int(start_coordinate), int(end_coordinate))
 
-            # elif (
-            #     (v.icoordinate - length*(2)) >= int(start_coordinate) and
-            #     (v.icoordinate + (length*2)) <= int(end_coordinate)
-            #     ):
-            #     #print(str(v.icoordinate - length*(2)))
-            #     #print("1-")
-            #     keys = range(int(v.icoordinate-(length*2)), int(v.icoordinate+(length*2)))
-            #
-            # elif int(v.icoordinate + (length*(2))) <= int(end_coordinate):
-            #     #print("2-"+str(v.icoordinate - (length*(2)))+" "+str(end_coordinate))
-            #     keys = range(int(start_coordinate), int(v.icoordinate+(length*2))+1)
-            #
-            # elif (v.icoordinate + (length*2)) >= int(end_coordinate):
-            #     if v.icoordinate-(length*2) > 0:
-            #         #print("3-"+str(v.icoordinate + (length*2)))
-            #         keys = range(int(v.icoordinate-(length*2)), int(end_coordinate)+1)
-            #     else:
-            #         keys =range(int(start_coordinate), int(end_coordinate))
+        ### Scan two window's length flanking nucleotide:
+            if (
+                (v.icoordinate - length*(2)) >= int(start_coordinate) and
+                (v.icoordinate + (length*2)) <= int(end_coordinate)
+                ):
+                # print(str(v.icoordinate - length*(2)))
+                # print("MIDDLE")
+                keys = range(int(v.icoordinate-(length*2)), int(v.icoordinate+(length*2)))
 
-            # else:
-            #     #print("Sub-dictionary error")
-            #     raise ValueError("Sub-dictionary error")
+            elif (
+                int(v.icoordinate + (length*(2))) <= int(end_coordinate)and
+                (v.icoordinate + (length*2)) <= int(end_coordinate)
+            ):
+                # print("BEGINING"+str(v.icoordinate - (length*(2)))+" "+str(end_coordinate))
+                keys = range(int(start_coordinate), int(v.icoordinate+(length*2))+1)
+
+            elif (v.icoordinate + (length*2)) >= int(end_coordinate):
+                if v.icoordinate-(length*2) > 0:
+                    # print("END"+str(v.icoordinate + (length*2)))
+                    keys = range(int(v.icoordinate-(length*2)), int(end_coordinate)+1)
+                else:
+                    keys =range(int(v.icoordinate-(length*2)), int(end_coordinate))
+
+            else:
+                print("Sub-dictionary error")
+                raise ValueError("Sub-dictionary error")
 
             subdict = {k: best_total_window_mean_bps[k] for k in keys}
             # if k == 216:
@@ -1045,10 +1048,10 @@ if competition == 1:
                 if (int(k) != bp.icoordinate) and (int(k) != int(bp.jcoordinate)):
                     # print("1 = "+str(v.icoordinate)+"_"+str(v.jcoordinate)+" AND "+str(bp.icoordinate)+"_"+str(bp.jcoordinate))
                     #if there was a competing i-j pair print it to log file instead:
-                    log_win.write("nt-"+str(k)+"*:\t"+str(bp.icoordinate)+"\t"+bp.jcoordinate+"\t"
-                          +str(round(bp.mfe, 2))
-                          +"\t"+str(round(bp.zscore, 2))
-                          +"\t"+str(round(bp.ed, 2))+"\n")
+                    log_win.write("nt-"+str(k)+"*:\t"+str(v.icoordinate)+"\t"+v.jcoordinate+"\t"
+                          +str(round(v.mfe, 2))
+                          +"\t"+str(round(v.zscore, 2))
+                          +"\t"+str(round(v.ed, 2))+"\n")
                     final_partners[k] = NucPair(v.inucleotide, v.icoordinate,
                                                 v.inucleotide, v.icoordinate,
                                                 best_bps[bp.icoordinate].zscore,
