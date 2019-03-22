@@ -165,10 +165,10 @@ def NucleotideDictionary (lines):
             try:
                 data = row.split('\t')
                 icoordinate = data[0]
-                if ("A" or "G" or "C" or "T" or "U") in str(data[8]):
+                if ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[8]):
                     #print("8"+str(data[8]))
                     sequence = transcribe(str(data[8]))
-                elif ("A" or "G" or "C" or "T" or "U") in str(data[7]):
+                elif ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[7]):
                     #print("7")
                     sequence = transcribe(str(data[7]))
                 else:
@@ -179,9 +179,9 @@ def NucleotideDictionary (lines):
                 strand = int(data[11])
                 #print(strand)
                 icoordinate = data[0]
-                if "A" or "G" or "C" or "T" or "U" in str(data[8]):
+                if ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[8]):
                     sequence_raw = transcribe(str(data[8]))
-                elif "A" or "G" or "C" or "T" or "U" in str(data[7]):
+                elif ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[7]):
                     sequence_raw = transcribe(str(data[7]))
                 else:
                     raise("Could not find sequence for window")
@@ -596,13 +596,13 @@ with open(filename, 'r') as f:
                 zscore = float(data[4])
                 pvalue = data[5]
                 ed = float(data[6])
-                if ("A" or "G" or "C" or "T" or "U") in str(data[8]):
+                if ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[8]):
                     #print("8"+str(data[8]))
                     fmfe = float(data[7])
                     sequence_raw = transcribe(str(data[8]))
                     structure_raw = str(data[9])
 
-                elif ("A" or "G" or "C" or "T" or "U") in str(data[7]):
+                elif ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[7]):
                     #print("7")
                     sequence_raw = transcribe(str(data[7]))
                     structure_raw = str(data[8])
