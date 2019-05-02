@@ -454,7 +454,7 @@ with open (myfasta, 'r') as forward_fasta:
                         else:
                             fc = RNA.fold_compound(str(frag), md) #creates "Fold Compound" object
                             fc.pf() # performs partition function calculations
-                            frag_q = fc.pf_fold() # calculate partition function "fold" of fragment
+                            #frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
                             (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
                             MFE = round(MFE, 2)
                             MFE_total.append(MFE)
@@ -563,9 +563,9 @@ with open (myfasta, 'r') as forward_fasta:
                         structure = "........................................................................................................................"
                         centroid = "........................................................................................................................"
                     else:
-                        fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
+                        fc = RNA.fold_compound(str(frag), md) #creates "Fold Compound" object
                         fc.pf() # performs partition function calculations
-                        frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
+                        #frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
                         (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
                         MFE = round(MFE, 2)
                         MFE_total.append(MFE)
