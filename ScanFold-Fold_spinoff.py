@@ -945,15 +945,22 @@ if competition == 1:
         test_k = int(k)
         #print(sum(test_k == int(v.jcoordinate) for v in best_bps.values()))
         if sum(test_k == int(v.jcoordinate) for v in best_bps.values()) >= 0:
+            #print(start_coordinate, end_coordinate)
         ### Scan the entire dictionary:
             #keys = range(int(start_coordinate), int(end_coordinate))
 
         ### Scan two window's length flanking nucleotide:
-            if (
+            #print(len(best_bps))
+            # print(length*4)
+            if (len(best_bps) < length*4):
+                #print("success")
+                #Length of input less than length of flanks
+                keys = range(int(start_coordinate), int(end_coordinate))
+            elif (
                 (v.icoordinate - length*(2)) >= int(start_coordinate) and
                 (v.icoordinate + (length*2)) <= int(end_coordinate)
                 ):
-                # print(str(v.icoordinate - length*(2)))
+                #print(str(v.icoordinate - length*(2)))
                 # print("MIDDLE")
                 keys = range(int(v.icoordinate-(length*2)), int(v.icoordinate+(length*2)))
 
@@ -961,13 +968,13 @@ if competition == 1:
                 int(v.icoordinate + (length*(2))) <= int(end_coordinate)and
                 (v.icoordinate + (length*2)) <= int(end_coordinate)
             ):
-                # print("BEGINING"+str(v.icoordinate - (length*(2)))+" "+str(end_coordinate))
+                #print("BEGINING"+str(v.icoordinate - (length*(2)))+" "+str(end_coordinate))
                 keys = range(int(start_coordinate), int(v.icoordinate+(length*2))+1)
 
             elif (v.icoordinate + (length*2)) >= int(end_coordinate):
                 if v.icoordinate-(length*2) > 0:
-                    # print("END"+str(v.icoordinate + (length*2)))
-                    keys = range(int(v.icoordinate-(length*2)), int(end_coordinate)+1)
+                    #print("END"+str(v.icoordinate + (length*2)))
+                    keys = range(int(v.icoordinate-(length*2)), int(end_coordinate))
                 else:
                     keys =range(int(v.icoordinate-(length*2)), int(end_coordinate))
 
@@ -975,6 +982,7 @@ if competition == 1:
                 print("Sub-dictionary error")
                 raise ValueError("Sub-dictionary error")
 
+            #print(keys)
             subdict = {k: best_total_window_mean_bps[k] for k in keys}
             # if k == 216:
             #     for subk, subv in subdict.items():

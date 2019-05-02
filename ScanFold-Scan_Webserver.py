@@ -307,10 +307,10 @@ def zscore_function(energy_list, randomizations):
     if sd != 0:
         zscore = (native_mfe - scrambled_mean_mfe)/sd
     if sd == 0:
-        zscore = "#DIV/0!"
+        zscore = float(00.00)
     return zscore;
 
-def rna_folder(frag):    
+def rna_folder(frag):
     fc = RNA.fold_compound(str(frag), md)
     (structure, MFE) = fc.mfe()
     return MFE;
@@ -355,7 +355,10 @@ def write_wig(metric_list, step, name, outputfilename):
     w = open(outputfilename, 'w')
     w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start=0", "step="+str(step), "span="+str(step)))
     for metric in metric_list:
-        w.write("%f\n" % (metric))
+        if metric == "#DIV/0!":
+            w.write("%s\n" % (metric))
+        else:
+            w.write("%f\n" % (metric))
 
 ##################### Main Script #########################################
 
