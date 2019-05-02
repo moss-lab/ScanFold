@@ -310,8 +310,9 @@ def zscore_function(energy_list, randomizations):
         zscore = "#DIV/0!"
     return zscore;
 
-def rna_folder(frag):
-    (structure, MFE) = RNA.fold(str(frag), md)
+def rna_folder(frag):    
+    fc = RNA.fold_compound(str(frag), md)
+    (structure, MFE) = fc.mfe()
     return MFE;
 
 def randomizer(frag):
