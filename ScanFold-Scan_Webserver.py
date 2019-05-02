@@ -311,7 +311,7 @@ def zscore_function(energy_list, randomizations):
     return zscore;
 
 def rna_folder(frag):
-    (structure, MFE) = RNA.fold(str(frag))
+    (structure, MFE) = RNA.fold(str(frag), md)
     return MFE;
 
 def randomizer(frag):
@@ -442,6 +442,7 @@ with open (myfasta, 'r') as forward_fasta:
                     else:
                         #print(start_nucleotide)
                         #print(end_nucleotide)
+                        frag = frag.upper()
                         frag = frag.transcribe()
                         if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
                             MFE = int(0.0)
@@ -451,9 +452,9 @@ with open (myfasta, 'r') as forward_fasta:
                             structure = "........................................................................................................................"
                             centroid = "........................................................................................................................"
                         else:
-                            fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
+                            fc = RNA.fold_compound(str(frag), md) #creates "Fold Compound" object
                             fc.pf() # performs partition function calculations
-                            frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
+                            frag_q = fc.pf_fold() # calculate partition function "fold" of fragment
                             (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
                             MFE = round(MFE, 2)
                             MFE_total.append(MFE)
