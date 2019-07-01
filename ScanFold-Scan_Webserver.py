@@ -403,7 +403,7 @@ with open (myfasta, 'r') as forward_fasta:
                 seq = cur_record.seq
                 #print(str(seq))
                 print("Sequence Length: "+str(len(seq))+"nt")
-                number_windows = int(len(seq))/int(step_size)
+                number_windows = int((len(seq)-int(window_size))/int(step_size)
                 print("Approximately "+str(int(number_windows))+" windows will be generated.")
                 print("Sequence being scanned...")
                 if len(seq) > 20000 :
