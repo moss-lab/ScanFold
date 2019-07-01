@@ -401,7 +401,7 @@ with open (myfasta, 'r') as forward_fasta:
                 ### get info about fasta files like name and sequence
                 #read_name = cur_record.name #this reads fasta header (not reliable)
                 seq = cur_record.seq
-                print(str(seq))
+                #print(str(seq))
                 print("Sequence Length: "+str(len(seq))+"nt")
                 number_windows = int(len(seq))/int(step_size)
                 print("Approximately "+str(int(number_windows))+" windows will be generated.")
