@@ -15,7 +15,7 @@ the entirity of the scanning window results into a single structure. Only the
 most unusually stable base pairs will be reported.
 
 Usage:
-ScanFold-Fold_spinoff.py -i out.tsv --out1 ./nofilter.ct --out2 ./scanfold-1.ct --out3 ./scanfold-2.ct --out4 ./log_file --out5 ./final_partner_log --out6 ./bp_track --out7 ./fasta.fa --dbn_file_path ./scanfold.dbn --fasta_index ./fasta.fa.fai --final_partners_wig ./fp.wig --nodeid "/scholar" --callbackurl "https://www.google.com"
+ScanFold-Fold_spinoff.py -i out.tsv --structure_extract_file ./extracted_structures.txt --out1 ./nofilter.ct --out2 ./scanfold-1.ct --out3 ./scanfold-2.ct --out4 ./log_file --out5 ./final_partner_log --out6 ./bp_track --out7 ./fasta.fa --dbn_file_path ./scanfold.dbn  --dbn_file_path1 ./scanfold1.dbn  --dbn_file_path2 ./scanfold2.dbn --dbn_file_path3 ./scanfold3.dbn --dbn_file_path4 ./scanfold4.dbn --fasta_index ./fasta.fa.fai --final_partners_wig ./fp.wig --nodeid "/scholar" --callbackurl "https://www.google.com"
 
     1. Name of output file from ScanFold-Scan
 
@@ -38,12 +38,16 @@ import numpy as np
 import os
 # sys.path.append('/Users/ryanandrews/Desktop/programs/RNAstructure/exe')
 # import RNAstructure
+sys.path.append('/usr/local/lib/python3.6/site-packages')
+import RNA
 import time
 import argparse
 from itertools import repeat
 from functools import partial
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import requests
+#for mono z-score
+import random
 
 # temporary fix to disable ssl warning
 import urllib3
@@ -79,6 +83,23 @@ parser.add_argument('--out7', type=str,
                     help='fasta_file path')
 parser.add_argument('--dbn_file_path', type=str,
                     help='dbn_file_path')
+parser.add_argument('--dbn_file_path1', type=str,
+                    help='dbn_file_path1')
+parser.add_argument('--dbn_file_path2', type=str,
+                    help='dbn_file_path2')
+parser.add_argument('--dbn_file_path3', type=str,
+                    help='dbn_file_path3')
+parser.add_argument('--dbn_file_path4', type=str,
+                    help='dbn_file_path4')
+parser.add_argument('--structure_extract_file', type=str,
+                    help='structure_extract_file path')
+
+
+
+parser.add_argument('--global_refold', action='store_true',
+                    help='global refold oprion')
+
+
 parser.add_argument('--nodeid', type=str,
                     help='node id')
 parser.add_argument('--callbackurl', type=str,
@@ -89,9 +110,13 @@ parser.add_argument('--name', type=str, default = "UserInput",
                     help='name of data being analyzied')
 parser.add_argument('--final_partners_wig', type=str,
                     help='final partners wig file path')
-
+parser.add_argument('-t', '--temp', type=int, default=37,
+                    help='Folding temperature')
 
 args = parser.parse_args()
+
+temperature = args.temp
+
 filename = args.input
 filter = int(args.f)
 competition = int(args.c)
@@ -104,6 +129,15 @@ out6 = args.out6
 out7 = args.out7
 name = args.name
 dbn_file_path = args.dbn_file_path
+dbn_file_path1 = args.dbn_file_path1
+dbn_file_path2 = args.dbn_file_path2
+dbn_file_path3 = args.dbn_file_path3
+dbn_file_path4 = args.dbn_file_path4
+
+global_refold = args.global_refold
+
+structure_extract_file = args.structure_extract_file
+
 final_partners_wig = args.final_partners_wig
 
 fasta_index_path = args.fasta_index
@@ -137,6 +171,30 @@ class NucPair:
         self.mfe = mfe
         self.ed = ed
 
+class NucStructure:
+    #Class to define a base pair
+    def __init__(self, bond_order, coordinate, nucleotide, structure):
+        self.bond_order = bond_order
+        self.coordinate = coordinate
+        self.nucleotide = nucleotide
+        self.structure = structure
+
+class NucStructureCount:
+    #Class to define a base pair
+    def __init__(self, structure_count, coordinate, nucleotide, structure):
+        self.structure_count = structure_count
+        self.coordinate = coordinate
+        self.nucleotide = nucleotide
+        self.structure = structure
+
+class ExtractedStructure:
+    def __init__(self, structure_count, sequence, structure, i, j):
+        self.structure_count = structure_count
+        self.sequence = sequence
+        self.structure = structure
+        self.i = i
+        self.j = j
+
 class NucZscore:
     #Nucleotide class; defines a nucleotide with a coordinate and a A,T,G,C,U
     def __init__(self, nucleotide, coordinate):
@@ -148,6 +206,139 @@ class NucZscore:
 
     def add_pair(self, pair):
         self.pair.append(pair)
+
+#### Defining Dinucleotide function #####
+# Taken from
+# altschulEriksonDinuclShuffle.py
+# P. Clote, Oct 2003
+# NOTE: One cannot use function "count(s,word)" to count the number
+# of occurrences of dinucleotide word in string s, since the built-in
+# function counts only nonoverlapping words, presumably in a left to
+# right fashion.
+def computeCountAndLists(s):
+  #WARNING: Use of function count(s,'UU') returns 1 on word UUU
+  #since it apparently counts only nonoverlapping words UU
+  #For this reason, we work with the indices.
+
+  #Initialize lists and mono- and dinucleotide dictionaries
+  List = {} #List is a dictionary of lists
+  List['A'] = []; List['C'] = [];
+  List['G'] = []; List['U'] = [];
+  nuclList   = ["A","C","G","U"]
+  s       = s.upper()
+  s       = s.replace("T","U")
+  nuclCnt    = {}  #empty dictionary
+  dinuclCnt  = {}  #empty dictionary
+  for x in nuclList:
+    nuclCnt[x]=0
+    dinuclCnt[x]={}
+    for y in nuclList:
+      dinuclCnt[x][y]=0
+
+  #Compute count and lists
+  nuclCnt[s[0]] = 1
+  nuclTotal     = 1
+  dinuclTotal   = 0
+  for i in range(len(s)-1):
+    x = s[i]; y = s[i+1]
+    List[x].append( y )
+    nuclCnt[y] += 1; nuclTotal  += 1
+    dinuclCnt[x][y] += 1; dinuclTotal += 1
+  assert (nuclTotal==len(s))
+  assert (dinuclTotal==len(s)-1)
+  return nuclCnt,dinuclCnt,List
+
+def chooseEdge(x,dinuclCnt):
+  numInList = 0
+  for y in ['A','C','G','U']:
+    numInList += dinuclCnt[x][y]
+  z = random.random()
+  denom=dinuclCnt[x]['A']+dinuclCnt[x]['C']+dinuclCnt[x]['G']+dinuclCnt[x]['U']
+  numerator = dinuclCnt[x]['A']
+  if z < float(numerator)/float(denom):
+    dinuclCnt[x]['A'] -= 1
+    return 'A'
+  numerator += dinuclCnt[x]['C']
+  if z < float(numerator)/float(denom):
+    dinuclCnt[x]['C'] -= 1
+    return 'C'
+  numerator += dinuclCnt[x]['G']
+  if z < float(numerator)/float(denom):
+    dinuclCnt[x]['G'] -= 1
+    return 'G'
+  dinuclCnt[x]['U'] -= 1
+  return 'U'
+
+def connectedToLast(edgeList,nuclList,lastCh):
+  D = {}
+  for x in nuclList: D[x]=0
+  for edge in edgeList:
+    a = edge[0]; b = edge[1]
+    if b==lastCh: D[a]=1
+  for i in range(2):
+    for edge in edgeList:
+      a = edge[0]; b = edge[1]
+      if D[b]==1: D[a]=1
+  ok = 0
+  for x in nuclList:
+    if x!=lastCh and D[x]==0: return 0
+  return 1
+
+def eulerian(s):
+  nuclCnt,dinuclCnt,List = computeCountAndLists(s)
+  #compute nucleotides appearing in s
+  nuclList = []
+  for x in ["A","C","G","U"]:
+    if x in s: nuclList.append(x)
+  #compute numInList[x] = number of dinucleotides beginning with x
+  numInList = {}
+  for x in nuclList:
+    numInList[x]=0
+    for y in nuclList:
+      numInList[x] += dinuclCnt[x][y]
+  #create dinucleotide shuffle L
+  firstCh = s[0]  #start with first letter of s
+  lastCh  = s[-1]
+  edgeList = []
+  for x in nuclList:
+    if x!= lastCh: edgeList.append( [x,chooseEdge(x,dinuclCnt)] )
+  ok = connectedToLast(edgeList,nuclList,lastCh)
+  return ok,edgeList,nuclList,lastCh
+
+def shuffleEdgeList(L):
+  n = len(L); barrier = n
+  for i in range(n-1):
+    z = int(random.random() * barrier)
+    tmp = L[z]
+    L[z]= L[barrier-1]
+    L[barrier-1] = tmp
+    barrier -= 1
+  return L
+
+def dinuclShuffle(s):
+  ok = 0
+  while not ok:
+    ok,edgeList,nuclList,lastCh = eulerian(s)
+  nuclCnt,dinuclCnt,List = computeCountAndLists(s)
+
+  #remove last edges from each vertex list, shuffle, then add back
+  #the removed edges at end of vertex lists.
+  for [x,y] in edgeList: List[x].remove(y)
+  for x in nuclList: shuffleEdgeList(List[x])
+  for [x,y] in edgeList: List[x].append(y)
+
+  #construct the eulerian path
+  L = [s[0]]; prevCh = s[0]
+  for i in range(len(s)-2):
+    ch = List[prevCh][0]
+    L.append( ch )
+    del List[prevCh][0]
+    prevCh = ch
+  L.append(s[-1])
+ # print(L)
+  t = "".join(L)
+  return t
+
 
 def NucleotideDictionary (lines):
     """
@@ -162,40 +353,44 @@ def NucleotideDictionary (lines):
             continue
         else:
             i = 1
-            try:
-                data = row.split('\t')
-                icoordinate = data[0]
-                if ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[8]):
-                    #print("8"+str(data[8]))
-                    sequence = transcribe(str(data[8]))
-                elif ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[7]):
-                    #print("7")
-                    sequence = transcribe(str(data[7]))
-                else:
-                    raise("Could not find sequence for window")
-
-            except:
-                data = row.split(',')
-                strand = int(data[11])
-                #print(strand)
-                icoordinate = data[0]
-                if ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[8]):
-                    sequence_raw = transcribe(str(data[8]))
-                elif ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[7]):
-                    sequence_raw = transcribe(str(data[7]))
-                else:
-                    raise("Could not find sequence for window")
-
-
-                #print(sequence_raw)
-                if strand == -1:
-                    #print("NegStrand")
-                    sequence = sequence_raw[::-1]
-                    #print(sequence)
-                else:
-                    #print("PosStrand")
-                    sequence = sequence_raw
-
+            data = row.split('\t')
+            icoordinate = data[0]
+            sequence = str(data[7])
+            if "-" in sequence:
+                sequence = sequence.replace("-", "N")
+            if str(data[8]).find("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") > 0:
+                #print("8"+str(data[8]))
+                sequence = transcribe(str(data[8]))
+                sequence = sequence.replace("-", "N")
+            if str(data[7]).find("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") > 0:
+                #print("7")
+                sequence = transcribe(str(data[7]))
+                sequence = sequence.replace("-", "N")
+            # else:
+            #     raise("Could not find sequence for window")
+            #
+            # except:
+            #     data = row.split(',')
+            #     strand = int(data[11])
+            #     #print(strand)
+            #     icoordinate = data[0]
+            #     if ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[8]):
+            #         sequence_raw = transcribe(str(data[8]))
+            #     elif ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[7]):
+            #         sequence_raw = transcribe(str(data[7]))
+            #     else:
+            #         raise("Could not find sequence for window")
+            #
+            #
+            #     #print(sequence_raw)
+            #     if strand == -1:
+            #         #print("NegStrand")
+            #         sequence = sequence_raw[::-1]
+            #         #print(sequence)
+            #     else:
+            #         #print("PosStrand")
+            #         sequence = sequence_raw
+            #
             for nuc in sequence:
                 #print(nuc)
                 x = NucZscore(nuc,(int(icoordinate)+int(i)-1))
@@ -340,7 +535,7 @@ def best_basepair(bp_dict, nucleotide, coordinate, type):
 def write_ct(base_pair_dictionary, filename, filter, strand):
     #Function to write connectivity table files from a list of best i-j pairs
     w = open(filename, 'w')
-    w.write((str(len(base_pair_dictionary))+"\t"+name+"\n"))
+    w.write((str(len(base_pair_dictionary))+"\t"+name+"_Filter="+str(filter)+"\n"))
     if strand == 1:
         for k, v in base_pair_dictionary.items():
             #print(start_coordinate)
@@ -541,6 +736,61 @@ def write_bp(base_pair_dictionary, filename, start_coordinate):
         else:
             print("2 Error at:", k)
 
+###### Function to calculate ZScore on list of MFEs #################
+def pscore_function(energy_list, randomizations):
+    below_native = 0
+    total_count = len(energy_list)
+    native_mfe = float(energy_list[0])
+    #scrambled_mean_mfe = np.mean(energy_list[1:randomizations])
+    for MFE in energy_list:
+        if float(MFE) < float(native_mfe):
+            below_native += 1
+
+    pscore = float(float(below_native) / float(total_count))
+
+    return pscore;
+
+###### Function to calculate ZScore on list of MFEs #################
+def zscore_function(energy_list, randomizations):
+    mean = np.mean(energy_list)
+    sd = np.std(energy_list)
+    native_mfe = energy_list[0]
+    scrambled_mean_mfe = np.mean(energy_list[1:randomizations])
+    #scrambled_sd = np.std(energy_list[1:randomizations])
+    if sd != 0:
+        zscore = (native_mfe - scrambled_mean_mfe)/sd
+    if sd == 0:
+        zscore = "#DIV/0!"
+    return zscore;
+
+###### Function to calculate MFEs using RNAfold #################
+def energies(seq_list):
+    energy_list = []
+    for sequence in seq_list:
+        #fc = RNA.fold_compound(str(sequence))
+        (structure, MFE) = RNA.fold(str(sequence)) # calculate and define variables for mfe and structure
+        energy_list.append(MFE) # adds the native fragment to list
+
+    return energy_list;
+
+######Function to create X number of scrambled RNAs in list #################
+def scramble(text, randomizations, type):
+    frag = str(text)
+    frag_seqs = []
+    if shuffle == "di":
+        for _ in range(randomizations):
+            result = dinuclShuffle(frag)
+            frag_seqs.append(result)
+    elif shuffle == "mono":
+        for _ in range(int(randomizations)):
+            result = ''.join(random.sample(frag,len(frag)))
+            frag_seqs.append(result)
+    else:
+        print("Shuffle type not properly designated; please input \"di\" or \"mono\"")
+
+    return frag_seqs;
+
+
 def utf8len(s):
     return len(s.encode('utf-8'))
 
@@ -596,15 +846,22 @@ with open(filename, 'r') as f:
                 zscore = float(data[4])
                 pvalue = data[5]
                 ed = float(data[6])
+                sequence_raw = transcribe(str(data[7]))
+                sequence_raw = sequence_raw.replace("-", "N")
+                #print(sequence_raw)
+                structure_raw = str(data[8])
+                #print(structure_raw)
                 if ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[8]):
                     #print("8"+str(data[8]))
                     fmfe = float(data[7])
                     sequence_raw = transcribe(str(data[8]))
+                    sequence_raw = sequence_raw.replace("-", "N")
                     structure_raw = str(data[9])
 
                 elif ("A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u") in str(data[7]):
                     #print("7")
                     sequence_raw = transcribe(str(data[7]))
+                    sequence_raw = sequence_raw.replace("-", "N")
                     structure_raw = str(data[8])
 
                 strand = 1
@@ -620,6 +877,7 @@ with open(filename, 'r') as f:
                 ed = float(data[6])
                 fmfe = data[7]
                 sequence_raw = transcribe(str(data[8]))
+                sequence_raw = sequence_raw.replace("-", "N")
                 structure_raw = str(data[9])
                 strand = int(data[11])
                 if strand == -1:
@@ -643,6 +901,7 @@ with open(filename, 'r') as f:
                 #print("Comma "+icoordinate)
 
             #Convert sequence and structures into lists
+            sequence_raw = sequence_raw.replace("-", "N")
             sequence = list(sequence_raw)
             structure = list(structure_raw)
 
@@ -786,7 +1045,11 @@ for k, v in sorted(bp_dict.items()):
     #Iterate through all i-j pairs per i-nucleotide to store metrics for each
     for pair in v:
         #Create a key  which contains nucleotide and coordinate info
-        partner_key = str(pair.jnucleotide)+"-"+str(pair.jcoordinate)
+        if "-" in pair.jnucleotide:
+            #print("Gap found. Converting to N.")
+            partner_key = str("N")+"-"+str(pair.jcoordinate)
+        else:
+            partner_key = str(pair.jnucleotide)+"-"+str(pair.jcoordinate)
         #print(partner_key)
 
         #Create a variable which contains all i-j pair info
@@ -857,6 +1120,7 @@ for k, v in sorted(bp_dict.items()):
         total_windows = total_windows + len(v1)
         key_data = re.split("-", str(k1))
         key_i = str(key_data[1])
+        #print(k, k1, key_i)
         if int(k) == int(key_i):
             continue
         if int(k) != int(key_i):
@@ -1135,7 +1399,10 @@ if competition == 1:
     write_ct(final_partners, out3, float(-2), strand)
 
     #Create a dbn file for forna
-    os.system(str("ct2dot "+str(out3)+" 1 "+str(dbn_file_path)))
+    os.system(str("ct2dot "+str(out1)+" 1 "+str(dbn_file_path1)))
+    os.system(str("ct2dot "+str(out2)+" 1 "+str(dbn_file_path2)))
+    os.system(str("ct2dot "+str(out3)+" 1 "+str(dbn_file_path3)))
+
 
     # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
     # write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
@@ -1163,5 +1430,244 @@ if competition == 0:
     write_bp(best_bps, out6, start_coordinate)
 write_fasta(nuc_dict, out7, name)
 write_fai(nuc_dict, fasta_index_path, name)
+
+#create output file with all DBNs and RNAfold with constraints
+dbn_log_file = open(dbn_file_path, "w+")
+
+#generate full fasta sequence as a string
+full_fasta_sequence = str()
+for k, v in nuc_dict.items():
+    nucleotide = v.nucleotide
+    full_fasta_sequence += nucleotide
+
+#If specified, refold and generate global fold of input sequence
+if global_refold == True:
+    #fold the full fasta input as a fold compound (full_fc) using model params (md)
+    print("Refolding full sequence using ScanFold results as constraints...")
+    elapsed_time = round((time.time() - start_time), 2)
+    print("Elapsed time: "+str(elapsed_time)+"s")
+    md = RNA.md()
+    md.temperature = int(temperature)
+
+    #refold from -1 constraints
+    fc = RNA.fold_compound(str(full_fasta_sequence), md)
+    dbn_file_filter1 = open(dbn_file_path2, "r")
+    lines = dbn_file_filter1.readlines()
+    filter1constraints = str(lines[2])
+    refolded1filter = fc.hc_add_from_db(filter1constraints)
+    (refolded_filter1_structure, refolded_filter1_MFE) = fc.mfe()
+
+    #refold from -2 constraints
+    fc = RNA.fold_compound(str(full_fasta_sequence), md)
+    dbn_file_filter2 = open(dbn_file_path3, "r")
+    lines = dbn_file_filter2.readlines()
+    filter2constraints = str(lines[2])
+    refolded2filter = fc.hc_add_from_db(filter2constraints)
+    (refolded_filter2_structure, refolded_filter2_MFE) = fc.mfe()
+
+    #extract the structure
+    full_fc = RNA.fold_compound(str(full_fasta_sequence), md)
+    (full_structure, full_MFE) = full_fc.mfe()
+
+    dbn_log_file.write(">"+str(name)+"\tGlobal Full MFE="+str(full_MFE)+"\n"+str(full_fasta_sequence)+"\n"+str(full_structure)+"\n")
+    dbn_log_file.write(">"+str(name)+"\Refolded with -1 constraints MFE="+str(refolded_filter1_MFE)+"\n"+str(full_fasta_sequence)+"\n"+str(refolded_filter1_structure)+"\n")
+    dbn_log_file.write(">"+str(name)+"\Refolded with -2 constraints MFE="+str(refolded_filter2_MFE)+"\n"+str(full_fasta_sequence)+"\n"+str(refolded_filter2_structure)+"\n")
+    dbn_log_file.close()
+    os.system(str("cat "+str(dbn_file_path)+" "+str(dbn_file_path1)+" "+str(dbn_file_path2)+" "+str(dbn_file_path3)+" > "+str(dbn_file_path4)))
+if global_refold == False:
+    os.system(str("cat "+str(dbn_file_path1)+" "+str(dbn_file_path2)+" "+str(dbn_file_path3)+" > "+str(dbn_file_path4)))
+
+
+#############
+#Begin the structure extract process
+
+bp_dict = {}
+
+#Set flanking nucleotides to be folded
+flanking = 0
+
+#Set number of randomizations and shuffle type ("mono" or "di")
+randomizations = 100
+shuffle = "mono"
+
+
+#Inititate base pair tabulation variables
+bond_order = []
+bond_count = 0
+
+#Read the structure of -2 filter2constraints
+if global_refold == False:
+    #refold from -2 constraints
+    dbn_file_filter2 = open(dbn_file_path3, "r")
+    lines = dbn_file_filter2.readlines()
+    filter2constraints = str(lines[2])
+    full_fasta_sequence = str(lines[1])
+
+structure_raw = filter2constraints
+sequence_raw = full_fasta_sequence
+
+sequence = list(sequence_raw)
+#print(sequence)
+structure = list(structure_raw)
+#print(structure)
+length = len(sequence)
+#print(length)
+length_st = len(structure)
+#print(length_st)
+
+
+#Iterate through sequence to assign nucleotides to structure type
+m = 0
+nuc_dict = {}
+while  m < length:
+    if structure[m] == '(':
+        #print(m, structure[m])
+        bond_count += 1
+        bond_order.append(bond_count)
+        nuc_dict[m] = NucStructure(bond_count, (m+1), sequence[m], structure[m])
+        m += 1
+
+    elif structure[m] == ')':
+    #    print(m, structure[m])
+        bond_order.append(bond_count)
+        bond_count -= 1
+        nuc_dict[m] = NucStructure(bond_count, (m+1), sequence[m], structure[m])
+        m += 1
+
+    elif str(structure[m]) == ( '.' ):
+    #    print(m, structure[m])
+        bond_order.append(0)
+        nuc_dict[m] = NucStructure(bond_count, (m+1), sequence[m], structure[m])
+        m += 1
+    elif str(structure[m]) == ( '<' ):
+    #    print(m, structure[m])
+        bond_order.append(0)
+        nuc_dict[m] = NucStructure(bond_count, (m+1), sequence[m], structure[m])
+        m += 1
+    elif str(structure[m]) == ( '>' ):
+    #    print(m, structure[m])
+        bond_order.append(0)
+        nuc_dict[m] = NucStructure(bond_count, (m+1), sequence[m], structure[m])
+        m += 1
+    elif str(structure[m]) == ( '{' ):
+    #    print(m, structure[m])
+        bond_order.append(0)
+        nuc_dict[m] = NucStructure(bond_count, (m+1), sequence[m], structure[m])
+        m += 1
+    elif str(structure[m]) == ( '}' ):
+    #    print(m, structure[m])
+        bond_order.append(0)
+        nuc_dict[m] = NucStructure(bond_count, (m+1), sequence[m], structure[m])
+        m += 1
+    else:
+        #print("Error", bond_count, (m+1), sequence[m], structure[m])
+        m += 1
+        continue
+        # print("no")
+
+
+#print(bond_order)
+#Initiate base_pair list
+base_pairs = []
+
+#Create empty variable named test
+test = ""
+
+#Iterate through bond order
+j = 0
+structure_count = 0
+structure_end = []
+structure_start = []
+while j < length:
+    try:
+        if (nuc_dict[j].bond_order == 1) and (nuc_dict[j].structure == '('):
+            structure_count += 1
+            #print(nuc_dict[j].structure)
+            structure_start.append(NucStructure(structure_count, nuc_dict[j].coordinate, nuc_dict[j].nucleotide, nuc_dict[j].structure))
+            j += 1
+
+        elif (nuc_dict[j].bond_order == 0) and (nuc_dict[j].structure == ')'):
+            structure_count += 1
+            #print(nuc_dict[j].structure)
+            structure_end.append(NucStructure(structure_count, nuc_dict[j].coordinate, nuc_dict[j].nucleotide, nuc_dict[j].structure))
+            j += 1
+        else:
+            j += 1
+    except:
+        j += 1
+        continue
+
+#print(structure_start[0].coordinate, structure_end[0].coordinate)
+
+#print(len(structure_start))
+
+l = 0
+extracted_structure_list = []
+while l < int(len(structure_start)):
+    offset = flanking
+    s = structure_start_coordinate =  int((structure_start[l].coordinate)-offset-1)
+    e = structure_end_coordinate = int((structure_end[l].coordinate)+offset-1)
+
+    seq = ""
+    fold = ""
+    for k, v in nuc_dict.items():
+        if s <= k <= e:
+            seq += str(v.nucleotide)
+            fold += str(v.structure)
+
+    extracted_structure_list.append(ExtractedStructure(l, seq, fold, s, e))
+
+    l += 1
+
+#print(len(extracted_structure_list))
+
+zscore_total = []
+numerical_z = []
+pscore_total = []
+numerical_p = []
+MFE_total = []
+ED_total = []
+
+with open(structure_extract_file, "w") as se:
+    for i in extracted_structure_list[:]:
+        frag = i.sequence
+        fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
+        fc.pf() # performs partition function calculations
+        frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
+        (MFE_structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
+        MFE = round(MFE, 2)
+        MFE_total.append(MFE)
+        (centroid, distance) = fc.centroid() # calculate and define variables for centroid
+        ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
+        ED_total.append(ED)            #print(structure)
+        #fmfe = fc.pbacktrack()
+        #print(str(fmfe))
+        seqlist = [] # creates the list we will be filling with sequence fragments
+        seqlist.append(frag) # adds the native fragment to list
+        scrambled_sequences = scramble(frag, randomizations, type)
+        seqlist.extend(scrambled_sequences)
+        energy_list = energies(seqlist)
+        try:
+            zscore = round(zscore_function(energy_list, randomizations), 2)
+        except:
+            zscore = zscore_function(energy_list, randomizations)
+        zscore_total.append(zscore)
+
+        pscore = round(pscore_function(energy_list, randomizations), 2)
+        #print(pscore)
+        pscore_total.append(pscore)
+
+
+        se.write("Structure number "+str(int(i.structure_count)+1)+"\n")
+        se.write("Coordinates ="+str(int((i.i)+1))+' to '+str(int((i.j)+1))+"\n")
+        se.write(str(i.sequence)+"\n")
+        se.write(str(i.structure)+"\n")
+        se.write(MFE_structure+"\n")
+        se.write('z-score= '+str(zscore)+"\n")
+        se.write('ED='+str(ED)+"\n")
+        se.write('MFE='+str(MFE)+"\n")
+        se.write('\n')
+
+dbn_log_file.close()
 print("ScanFold-Fold analysis complete! Refresh page to ensure proper loading of IGV")
 #print(url)

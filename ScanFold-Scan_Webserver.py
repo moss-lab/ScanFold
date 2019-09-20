@@ -401,6 +401,9 @@ with open (myfasta, 'r') as forward_fasta:
                 ### get info about fasta files like name and sequence
                 #read_name = cur_record.name #this reads fasta header (not reliable)
                 seq = cur_record.seq
+                if "-" in seq:
+                    seq.ungap("-")
+                    print("Gaps found in sequence.\n Removing Gaps...")
                 #print(str(seq))
                 print("Sequence Length: "+str(len(seq))+"nt")
                 number_windows = int((len(seq)-int(window_size))/int(step_size)
