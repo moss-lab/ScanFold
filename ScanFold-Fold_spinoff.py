@@ -1629,6 +1629,7 @@ MFE_total = []
 ED_total = []
 
 with open(structure_extract_file, "w") as se:
+    se.write("ScanFold predicted structures which contain at least one base pair with Zavg < -2 have been extracted from "+name+" results (sequence length "+length+"nt) and have been refolded using RNAfold to determine their individual MFE, structure, z-score (using 100X randomizations), and ensemble diversity score.")
     for i in extracted_structure_list[:]:
         frag = i.sequence
         fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
@@ -1644,16 +1645,16 @@ with open(structure_extract_file, "w") as se:
         #print(str(fmfe))
         seqlist = [] # creates the list we will be filling with sequence fragments
         seqlist.append(frag) # adds the native fragment to list
-        scrambled_sequences = scramble(frag, randomizations, type)
+        scrambled_sequences = scramble(frag, 100, type)
         seqlist.extend(scrambled_sequences)
         energy_list = energies(seqlist)
         try:
-            zscore = round(zscore_function(energy_list, randomizations), 2)
+            zscore = round(zscore_function(energy_list, 100), 2)
         except:
-            zscore = zscore_function(energy_list, randomizations)
+            zscore = zscore_function(energy_list, 100)
         zscore_total.append(zscore)
 
-        pscore = round(pscore_function(energy_list, randomizations), 2)
+        pscore = round(pscore_function(energy_list, 100), 2)
         #print(pscore)
         pscore_total.append(pscore)
 
