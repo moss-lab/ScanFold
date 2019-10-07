@@ -1629,7 +1629,7 @@ MFE_total = []
 ED_total = []
 
 with open(structure_extract_file, "w") as se:
-    se.write("ScanFold predicted structures which contain at least one base pair with Zavg < -2 have been extracted from "+name+" results (sequence length "+length+"nt) and have been refolded using RNAfold to determine their individual MFE, structure, z-score (using 100X randomizations), and ensemble diversity score.")
+    se.write("ScanFold predicted structures which contain at least one base pair with Zavg < -2 have been extracted from "+str(name)+" results (sequence length "+str(length)+"nt) and have been refolded using RNAfold to determine their individual MFE, structure, z-score (using 100X randomizations), and ensemble diversity score.\n")
     for i in extracted_structure_list[:]:
         frag = i.sequence
         fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
