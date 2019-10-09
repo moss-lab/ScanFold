@@ -13,7 +13,7 @@ This program takes a fasta input file and uses a scanning window approach to
 calculate thermodynamic z-scores for individual windows.
 
 Usage:
-$ ScanFold-Scan_Webserver.py -i fasta.fa --scan_out_path ./out.tsv --zscore_wig_file_path ./zscore.bw --mfe_wig_file_path ./mfe.bw --ed_wig_file_path ./ed.bw --pvalue_wig_file_path ./pvalue.bw --fasta_file_path ./fasta.fasta.fa --fasta_index ./fasta.fai --nodeid "/scholar" --callbackurl "https://www.google.com"
+ScanFold-Scan_spinoff.py -i fasta.fa --scan_out_path ./out.tsv --zscore_wig_file_path ./zscore.bw --mfe_wig_file_path ./mfe.bw --ed_wig_file_path ./ed.bw --pvalue_wig_file_path ./pvalue.bw --fasta_file_path ./fasta.fasta.fa --fasta_index ./fasta.fai --nodeid "/scholar" --callbackurl "https://www.google.com"
 """
 
 import time
@@ -406,7 +406,7 @@ with open (myfasta, 'r') as forward_fasta:
                     print("Gaps found in sequence.\n Removing Gaps...")
                 #print(str(seq))
                 print("Sequence Length: "+str(len(seq))+"nt")
-                number_windows = int((len(seq)-int(window_size))/int(step_size)
+                number_windows = int((len(seq)-int(window_size))/int(step_size)+1)
                 print("Approximately "+str(int(number_windows))+" windows will be generated.")
                 print("Sequence being scanned...")
                 if len(seq) > 20000 :
@@ -425,7 +425,7 @@ with open (myfasta, 'r') as forward_fasta:
                 # ED_wig.addHeader([(str(record_name), int(length))])
 
                 ### Write the header for output:
-                w.write("i\tj\tTemperature\tNative_dG\tZ-score\tP-score\tEnsembleDiversity\tSequence\tStructure\tCentroid\t"+record_name+"\n")
+                w.write("i\tj\tTemperature\tNative_dG\tZ-score\tP-score\tEnsembleDiversity\tSequence\tStructure\tCentroid\tWindowSize="+str(window_size)+" StepSize="+str(step_size)+" RandomizationCount="+str(randomizations)+" ShuffleType="+type+" Name="+record_name+"\n")
                 i = 0
             ##### Main routine using defined functions: ##########################################
             ### Figure out length progress bar
