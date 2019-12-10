@@ -21,6 +21,7 @@ import argparse
 import string
 import re
 import numpy as np
+sys.path.append('/usr/local/lib/python3.6/site-packages')
 import RNA
 import random
 import multiprocessing
@@ -29,7 +30,7 @@ from Bio import SeqIO
 
 #### Parsing arguments ####
 parser = argparse.ArgumentParser()
-parser.add_argument('filename',  type=str,
+parser.add_argument('-i', '--filename', type=str,
                     help='input filename')
 parser.add_argument('-s', type=int, default=10,
                     help='step size')
@@ -41,10 +42,13 @@ parser.add_argument('-t', type=int, default=37,
                     help='Folding temperature')
 parser.add_argument('-type', type=str, default='mono',
                     help='randomization type')
-parser.add_argument('-p', type=str, default='off',
-                    help='print to screen option (default off:1)')
+parser.add_argument('-p', '--print_to_screen', action='store_true',
+                    help='print to screen option (default off)')
 parser.add_argument('--print_random', type=str, default='off',
                     help='print to screen option (default off)')
+parser.add_argument('-c', '--constraints', type=str,
+                    help='optional | input constraint file')
+
 
 args = parser.parse_args()
 myfasta = args.filename
@@ -53,12 +57,16 @@ window_size = int(args.w)
 randomizations = int(args.r)
 temperature = int(args.t)
 type = str(args.type)
-print_to_screen = str(args.p)
+print_to_screen = args.print_to_screen
 print_random = str(args.print_random)
+constraints = args.constraints
+
 
 #### Defining global variables ###############
 
 w = open(myfasta+".forward.win_"+str(window_size)+".stp_"+str(step_size)+".rnd_"+str(randomizations)+".shfl_"+str(type)+".txt", 'w')
+
+##### Establish global "folding model" incorporting temperature (or other settings) #####
 md = RNA.md()
 md.temperature = int(temperature)
 
@@ -279,6 +287,8 @@ with open(myfasta, 'r') as forward_fasta:
     for cur_record in SeqIO.parse(forward_fasta, "fasta") :
 
             read_name = cur_record.name
+            full_seq_length = len(cur_record.seq)
+            print("Scanning sequence "+str(read_name)+"\nSequence Length: "+str(len(cur_record.seq))+"nt long.")
 
             #### this will change based on input fasta file header format #########
             #print(read.name)
@@ -298,6 +308,31 @@ with open(myfasta, 'r') as forward_fasta:
             MFE_total = []
             ED_total = []
 
+
+            ##### Load constraints #####
+            constraint_dict = {}
+            constraint_list = []
+            if args.constraints != None:
+                print("Considering constraint input")
+                constraint_file = open(args.constraints, "r")
+                constraints = constraint_file.readlines()[2]
+
+                #print(constraints)
+                i = 1
+                for nt in constraints:
+                    #print(i, nt)
+                    constraint_list.append(nt)
+                    constraint_dict[i] = nt
+                    i += 1
+
+
+                if len(constraint_list)-1 == len(cur_record.seq):
+                    print("Constraint list is "+str(len(constraint_list)-1)+"nt long.")
+                else:
+                    print("Constraint list is "+str(len(constraint_list)-1)+"nt long.")
+                    raise ValueError("Error detected. Sequence and Constraints must be same length.")
+
+
             #gff3file = open(read.name+'.gff3', 'w')
             #pscore_wig = open(read.name+'.pscore.wig', 'w')
             #zscore_wig = open(read.name+".zscore.wig", 'w')
@@ -305,14 +340,19 @@ with open(myfasta, 'r') as forward_fasta:
             #MFE_wig = open(read.name+".MFE.wig", 'w')
             #print(read.name, read.sequence)
             length = len(cur_record.seq)
-            seq = cur_record.seq
-            #print(length)
-            w.write("i\tj\tTemperature\tNative_dG\tZ-score\tP-score\tEnsembleDiversity\tSequence\tStructure\tCentroid\t"+read_name+"\n")
-            i = 0
 
+            ##### This will ignore any sequences in fasta file which are smaller than window size #####
+            if length < int(window_size):
+                continue
+            seq = cur_record.seq
+
+            ##### Write the header to the output file #####
+            w.write("i\tj\tTemperature\tNative_dG\tZ-score\tP-score\tEnsembleDiversity\tSequence\tStructure\tCentroid\t"+read_name+"\n")
 
     ##### Main routine using defined functions: ##########################################
 
+
+            i = 0 #Important to establish i=0 here...
             while i == 0 or i <= (length - window_size):
                 start_nucleotide = i + 1 # This will just define the start nucleotide coordinate value
                 frag = seq[i:i+int(window_size)] # This breaks up sequence into fragments
@@ -329,6 +369,8 @@ with open(myfasta, 'r') as forward_fasta:
                     #print(start_nucleotide)
                     #print(end_nucleotide)
                     frag = frag.transcribe()
+
+                    ##### Dealing with completely ambigious (All "N") sequence #####
                     if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
                         MFE = int(0.0)
                         zscore = "#DIV/0"
@@ -337,9 +379,9 @@ with open(myfasta, 'r') as forward_fasta:
                         structure = "........................................................................................................................"
                         centroid = "........................................................................................................................"
                     else:
-                        fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
+                        fc = RNA.fold_compound(str(frag), md) #creates "Fold Compound" object using folding model
                         fc.pf() # performs partition function calculations
-                        frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
+                        frag_q = (RNA.pf_fold(str(frag)), md) # calculate partition function "fold" of fragment
                         (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
                         MFE = round(MFE, 2)
                         MFE_total.append(MFE)
@@ -348,6 +390,32 @@ with open(myfasta, 'r') as forward_fasta:
                         ED_total.append(ED)            #print(structure)
                         #fmfe = fc.pbacktrack()
                         #print(str(fmfe))
+                        if constraints == None:
+                            (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
+                            fc.pf()# performs partition function calculations
+                            #frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
+
+                            MFE = round(MFE, 2)
+                            MFE_total.append(MFE)
+                            (centroid, distance) = fc.centroid() # calculate and define variables for centroid
+                            ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
+                            ED_total.append(ED)            #print(structure)
+                            #fmfe = fc.pbacktrack()
+                            #print(str(fmfe))
+                        elif constraints != None:
+                            window_constraint_list = constraint_list[start_nucleotide-1:end_nucleotide]
+                            window_constraints = ''.join(window_constraint_list)
+                            #print(frag)
+                            #print(len(window_constraints))
+                            fc.hc_add_from_db(window_constraints)
+                            (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
+                            fc.pf()# performs partition function calculations
+                            #frag_q = fc.pf_fold() # calculate partition function "fold" of fragment
+                            MFE = round(MFE, 2)
+                            MFE_total.append(MFE)
+                            (centroid, distance) = fc.centroid() # calculate and define variables for centroid
+                            ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
+                            ED_total.append(ED)            #print(structure)
                         seqlist = [] # creates the list we will be filling with sequence fragments
                         seqlist.append(frag) # adds the native fragment to list
                         scrambled_sequences = scramble(frag, randomizations, type)
@@ -366,8 +434,11 @@ with open(myfasta, 'r') as forward_fasta:
                         #print(pscore)
                         pscore_total.append(pscore)
 
-                    if print_to_screen == 'on':
-                        print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                    if print_to_screen == True:
+                        if constraints != None:
+                            print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\n"+str(frag)+"\n"+str(window_constraints)+"\n"+str(structure)+"\n"+str(centroid)+"\n")
+                        else:
+                            print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\n"+str(frag)+"\n"+str(structure)+"\n"+str(centroid)+"\n")
                     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
                     #gff3file.write()
                     #pscore_wig.write()
