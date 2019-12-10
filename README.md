@@ -2,7 +2,7 @@
 *UPDATE! ScanFold has been implemented as a WebServer.* Try it out at https://mosslabtools.bb.iastate.edu/scanfold
 and read more about its uses here: https://doi.org/10.1016/j.ymeth.2019.11.001
 
-*UPDATE (12/10/2019)! ScanFold-Scan can now consider hard constraints as input during the scanning window process. Constraints should be foratted as .dbn files, where line 1 is a header, line 2 is the sequence and line three contains the hard constraints.*
+*(12/10/2019) ScanFold-Scan can now consider hard constraints as input during the scanning window process. Constraints should be foratted as .dbn files, where line 1 is a header, line 2 is the sequence and line three contains the hard constraints.*
    
    >Header
    
