@@ -15,24 +15,24 @@ most unusually stable base pairs will be reported.
 
 Usage:
 $ python3.6 ScanFold-Fold.py -i input [options]
-options: 
-    -f ["filter value" (integer) default -2] 
+options:
+    -f ["filter value" (integer) default -2]
     -c ["competition filter" (integer) 1 for no competition allowed or 0 for competition allowed;
       competition filtering takes much longer but yields cleaner results]
 
-Input: 
+Input:
     input: Name of output file from ScanFold-Scan
 
     Filter value: Cutoff value which will be used in addition to the default values of -2,
       -1 and 10.
-     
+
     Compeition filter
 
 Output:
       The standard output is formatted as a log file which contains 1. a list
       of all nucleotides and their predicted base pairing partners; 2. a list of
       the most favorable base pairs.
-      
+
 
 """
 
@@ -44,7 +44,7 @@ import sys
 import re
 import numpy as np
 import os
-import RNAstructure
+#import RNAstructure
 import time
 import argparse
 from itertools import repeat
@@ -61,16 +61,18 @@ parser.add_argument('-f', type=int, default=-2,
                     help='filter value')
 parser.add_argument('-c', type=int, default=1,
                     help='Competition (1 for disallow competition, 0 for allow; 1 by default)')
+parser.add_argument('-id', type=str,
+                    help='Accession number or ID of input sequence; creates properly named BP files.')
 
 args = parser.parse_args()
 filename = args.input
 filter = int(args.f)
 competition = int(args.c)
+id = str(args.id)
 
 #print(options, filter)
 output_data = re.split('\.', str(filename))
 output = str(str(filename)+".ScanFold.")
-
 
 log_total = open(str(filename)+".ScanFold.log.txt", 'w')
 log_win = open(str(filename)+".ScanFold.final_partners.txt", 'w')
@@ -406,33 +408,33 @@ def write_bp(base_pair_dictionary, filename):
         #choose color
         if float(v.zscore) < float(-2):
             score = str(0)
-            print(k, v.zscore, score)
+            # print(k, v.zscore, score)
 
         elif (float(v.zscore) < int(-1)) and (float(v.zscore) >= -2):
             score = str(1)
-            print(k, v.zscore, score)
+            # print(k, v.zscore, score)
 
         elif (float(v.zscore) < int(0)) and (float(v.zscore) >= -1):
             score = str(2)
-            print(k, v.zscore, score)
+            # print(k, v.zscore, score)
 
         elif float(v.zscore) == 0 :
             score = str(3)
-            print(k, v.zscore, score)
+            # print(k, v.zscore, score)
 
         elif 0 < float(v.zscore) <= 1:
             score = str(4)
-            print(k, v.zscore, score)
+            # print(k, v.zscore, score)
 
         elif 1 < float(v.zscore) <= 2:
             score = str(5)
-            print(k, v.zscore, score)
+            # print(k, v.zscore, score)
 
         elif float(v.zscore) > 2:
             score = str(6)
-            print(k, v.zscore, score)
+            # print(k, v.zscore, score)
 
-        else:
+        # else:
             print(k, v.zscore, score)
 
 
@@ -440,11 +442,11 @@ def write_bp(base_pair_dictionary, filename):
 
         if int(v.icoordinate) < int(v.jcoordinate):
             #w.write("%d\t%d\t%f\n" % (k, int(v.jcoordinate), float(-(math.log10(probability)))))
-            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % ("KJ776791.2", int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (id, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
         elif int(v.icoordinate) > int(v.jcoordinate):
-            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % ("KJ776791.2", int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (id, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
         elif int(v.icoordinate) == int(v.jcoordinate):
-            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % ("KJ776791.2", k, k, int(v.jcoordinate), int(v.jcoordinate), score))
+            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (id, k, k, int(v.jcoordinate), int(v.jcoordinate), score))
         else:
             print("2 Error at:", k)
 
@@ -466,8 +468,25 @@ with open(filename, 'r') as f:
     z_score_list = []
     bp_dict = {}
 
+    #Read top line:
+    top_row = f.readline().split('\t')
+    #print(top_row)
+
     #Read all lines from ScanFold-Scan file (exept header)
     lines = f.readlines()[1:]
+
+    #Establish Input ID
+    if args.id == None:
+        try:
+            id = str(top_row[-1]).strip()
+            print("Assigned ID automatically from input file: "+id)
+            print("Use -id flag to input specific sequence ID code if this is incorrect")
+
+        except:
+            id = str("UserInput")
+            print("Assigned a default ID: "+id)
+            print("Use -id flag to input specific sequence ID code")
+
 
     #Generate nucleotide dictionary to assign each nucleotide in sequence a key
     nuc_dict = NucleotideDictionary(lines)
@@ -479,10 +498,11 @@ with open(filename, 'r') as f:
     end_coordinate = str(list(nuc_dict.keys())[-1])
     #print(end_coordinate)
 
+
+
     #Iterate through input file, read each rows metrics, sequence, etc.
     print("Reading sequence and structures...")
     for row in lines:
-
         #Ignore blank lines
         if not row.strip():
             continue
@@ -838,7 +858,7 @@ log_win.write("\ni\tbp(i)\tbp(j)\tavgMFE\tavgZ\tavgED"
 
 #Iterate through round 1 i-j pairs
 if competition == 1:
-    print(start_coordinate, end_coordinate)
+    #print(start_coordinate, end_coordinate)
     print("Detecting competing pairs...")
     j_coord_list = []
     # for k, v in sorted(best_bps.items()):
@@ -1038,13 +1058,17 @@ if competition == 1:
     #Write DBN files from CT files
     elapsed_time = str(round((time.time() - start_time), 2))+"s"
     print("Elapsed time: "+elapsed_time)
-    os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
-    os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
-    os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
-    if filter != None:
-        os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
-    os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
-    os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
-    os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
-    write_bp(final_partners, "final_partners_test.bp")
-    print("ScanFold-Fold complete, find results in...")
+    print("Generating DBN files with RNAstructure...")
+    try:
+        os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
+        os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
+        os.system(str("ct2dot "+output+"-2.ct 1 "+output+"-2.dbn"))
+        if filter != None:
+            os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
+        os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
+        os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
+        os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
+        write_bp(final_partners, "final_partners_test.bp")
+        print("ScanFold-Fold complete, find results in...")
+    except:
+        print("DBN files not generated. Install command line tools for RNAstructure program to utilized ct2dot function.")
