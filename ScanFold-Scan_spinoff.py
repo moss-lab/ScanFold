@@ -530,12 +530,12 @@ with open (myfasta, 'r') as forward_fasta:
             seq = re.sub("\n", "", raw_sequence.strip())
             #print(seq)
             print("Sequence Length: "+str(len(seq))+"nt")
-            number_windows = int(len(seq))/int(step_size)
+            number_windows = int((len(seq)-int(window_size))/int(step_size)+1)
             print("Approximately "+str(int(number_windows))+" windows will be generated.")
             print("Sequence being scanned...")
-            if len(seq) > 20000 :
+            if len(seq) > 40000 :
                 print(str(len(seq)))
-                raise SystemExit('Input sequence is longer than 20000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
+                raise SystemExit('Input sequence is longer than 40000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
             length = len(seq)
             record_name = name
             i = 0
