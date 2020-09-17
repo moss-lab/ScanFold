@@ -100,10 +100,6 @@ parser.add_argument('--global_refold', action='store_true',
                     help='global refold oprion')
 
 
-parser.add_argument('--nodeid', type=str,
-                    help='node id')
-parser.add_argument('--callbackurl', type=str,
-                    help='callbackurl')
 parser.add_argument('--fasta_index', type=str,
                     help='fasta index file path')
 parser.add_argument('--name', type=str, default = "UserInput",
@@ -141,8 +137,6 @@ structure_extract_file = args.structure_extract_file
 final_partners_wig = args.final_partners_wig
 
 fasta_index_path = args.fasta_index
-nodeid = args.nodeid
-callbackurl = args.callbackurl
 
 
 try:
@@ -1421,8 +1415,7 @@ if competition == 1:
     # os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
     # os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
     # os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
-url = str(callbackurl+"/"+str(nodeid)+"/0")
-response = requests.get(url, verify=False)
+
 if competition == 1:
     write_bp(final_partners, out6, start_coordinate)
     write_wig_dict(final_partners, final_partners_wig, name)
