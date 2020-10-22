@@ -117,12 +117,6 @@ input_start_coordinate = args.start
 
 #### Defining global variables ###############
 
-### The RNA model "md" needs to be set ABOVE FUNCTIONS! ####
-### DO NOT MOVE ###
-md = RNA.md()
-md.temperature = int(temperature)
-### DO NOT MOVE ###
-### The RNA model "md" needs to be set ABOVE FUNCTIONS! ####
 
 def multiprocessing(func, args,
                     workers):
@@ -314,8 +308,13 @@ def zscore_function(energy_list, randomizations):
     return zscore;
 
 def rna_folder(frag):
-    fc = RNA.fold_compound(str(frag), md)
-    (structure, MFE) = fc.mfe()
+    frag = bytes(frag, 'utf-8')
+    subprocess.PIPE
+    fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag, check=True, stdout=PIPE, stderr=PIPE)
+    out = str(fc.stdout)
+    test = list(out.split("\\n"))
+    MFE = test[1].split()[1]
+    MFE = float(re.sub('[()]', '', MFE))
     return MFE;
 
 def randomizer(frag):
@@ -462,17 +461,17 @@ with open (myfasta, 'r') as forward_fasta:
                             structure = "........................................................................................................................"
                             centroid = "........................................................................................................................"
                         else:
-                            fc = RNA.fold_compound(str(frag), md) #creates "Fold Compound" object
-                            fc.pf() # performs partition function calculations
-                            #frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
-                            (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
-                            MFE = round(MFE, 2)
-                            MFE_total.append(MFE)
-                            (centroid, distance) = fc.centroid() # calculate and define variables for centroid
-                            ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
-                            ED_total.append(ED)            #print(structure)
-                            #fmfe = fc.pbacktrack()
-                            #print(str(fmfe))
+                            frag = bytes(frag, 'utf-8')
+                            subprocess.PIPE
+                            fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag, check=True, stdout=PIPE, stderr=PIPE)
+                            out = str(fc.stdout)
+                            test = list(out.split("\\n"))
+                            structure = test[1].split()[0]
+                            centroid = test[3].split()[0]
+                            MFE = test[1].split()[1]
+                            MFE = float(re.sub('[()]', '', MFE))
+                            ED = test[4].split()[9]
+
                             seqlist = [] # creates the list we will be filling with sequence fragments
                             seqlist.append(frag) # adds the native fragment to list
                             scrambled_sequences = scramble(frag, randomizations, type)
@@ -573,17 +572,17 @@ with open (myfasta, 'r') as forward_fasta:
                         structure = "........................................................................................................................"
                         centroid = "........................................................................................................................"
                     else:
-                        fc = RNA.fold_compound(str(frag), md) #creates "Fold Compound" object
-                        fc.pf() # performs partition function calculations
-                        #frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
-                        (structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
-                        MFE = round(MFE, 2)
-                        MFE_total.append(MFE)
-                        (centroid, distance) = fc.centroid() # calculate and define variables for centroid
-                        ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
-                        ED_total.append(ED)            #print(structure)
-                        #fmfe = fc.pbacktrack()
-                        #print(str(fmfe))
+                        frag = bytes(frag, 'utf-8')
+                        subprocess.PIPE
+                        fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag, check=True, stdout=PIPE, stderr=PIPE)
+                        out = str(fc.stdout)
+                        test = list(out.split("\\n"))
+                        structure = test[1].split()[0]
+                        centroid = test[3].split()[0]
+                        MFE = test[1].split()[1]
+                        MFE = float(re.sub('[()]', '', MFE))
+                        ED = test[4].split()[9]
+
                         seqlist = [] # creates the list we will be filling with sequence fragments
                         seqlist.append(frag) # adds the native fragment to list
                         scrambled_sequences = scramble(frag, randomizations, type)
