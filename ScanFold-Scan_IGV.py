@@ -26,7 +26,8 @@ import re
 import numpy as np
 sys.path.append('/home/randrews/ViennaRNA/lib/python3.6/site-packages/')
 sys.path.append('/usr/local/lib/python3.6/site-packages')
-import RNA
+#import RNA
+import subprocess
 import random
 import multiprocessing
 import requests
@@ -39,81 +40,6 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from Bio import SeqIO
 # from progressbar import *               # just a simple progress bar
 
-#### Parsing arguments ####
-parser = argparse.ArgumentParser()
-parser.add_argument('-i', '--input', type=str, required=True,
-                    help='input filename')
-parser.add_argument('-s', type=int, default=10,
-                    help='step size')
-parser.add_argument('-w', type=int, default=120,
-                    help='window size')
-parser.add_argument('-r', type=int, default=30,
-                    help='randomizations')
-parser.add_argument('-t', '--temp', type=int, default=37,
-                    help='Folding temperature')
-parser.add_argument('-type', type=str, default='mono',
-                    help='randomization type')
-parser.add_argument('-p', type=str, default='off',
-                    help='print to screen option (default off:1)')
-parser.add_argument('--print_random', type=str, default='off',
-                    help='print to screen option (default off)')
-parser.add_argument('--name', type=str, default = "UserInput",
-                    help='name of data being analyzed')
-parser.add_argument('--split', type=str, default = "off",
-                    help='name of data being analyzed')
-
-###Required arguments for webserver:
-parser.add_argument('--scan_out_path', type=str,
-                    help='ScanFold-Scan output path')
-parser.add_argument('--zscore_wig_file_path', type=str,
-                    help='zscore_wig_file_path')
-parser.add_argument('--mfe_wig_file_path', type=str,
-                    help='mfe_wig_file_path')
-parser.add_argument('--ed_wig_file_path', type=str,
-                    help='ed_wig_file_path')
-parser.add_argument('--pvalue_wig_file_path', type=str,
-                    help='pvalue_wig_file_path')
-parser.add_argument('--fasta_file_path', type=str,
-                    help='fasta_file path')
-parser.add_argument('--fasta_index', type=str,
-                    help='fasta index file path')
-
-### Arguments for IGV
-parser.add_argument('--start', type=int,
-                    help='Input start coordinate')
-
-
-### input parms ###
-
-
-
-args = parser.parse_args()
-
-myfasta = args.input
-step_size = int(args.s)
-window_size = int(args.w)
-randomizations = int(args.r)
-temperature = int(args.temp)
-type = str(args.type)
-print_to_screen = str(args.p)
-print_random = str(args.print_random)
-
-scan_out_path = args.scan_out_path
-
-mfe_wig_file_path = args.mfe_wig_file_path
-zscore_wig_file_path = args.zscore_wig_file_path
-pvalue_wig_file_path = args.pvalue_wig_file_path
-ed_wig_file_path = args.ed_wig_file_path
-
-name = args.name
-fasta_file_path = args.fasta_file_path
-fasta_index = args.fasta_index
-
-split = args.split
-
-### IGV Args
-
-input_start_coordinate = args.start
 
 #### Defining global variables ###############
 
@@ -307,14 +233,23 @@ def zscore_function(energy_list, randomizations):
         zscore = float(00.00)
     return zscore;
 
-def rna_folder(frag):
-    frag = bytes(frag, 'utf-8')
-    subprocess.PIPE
-    fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag, check=True, stdout=PIPE, stderr=PIPE)
-    out = str(fc.stdout)
+def rna_folder(arg):
+    (frag, temperature) = arg
+    frag = bytes(str(frag), 'utf-8')
+    fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out = str(fc.stdout).strip().strip("\\r")
     test = list(out.split("\\n"))
-    MFE = test[1].split()[1]
-    MFE = float(re.sub('[()]', '', MFE))
+    #print(test[1])
+    MFE = test[1].split(" ", 1)[1]
+    #print(MFE)
+    try:
+        #MFE = str(MFE)
+        #print(MFE)
+        MFE = float(re.sub('[()]', '', MFE))
+        #print(MFE)
+    except:
+        #print(MFE)
+        print("Error parsing MFE values", test)
     return MFE;
 
 def randomizer(frag):
@@ -322,10 +257,10 @@ def randomizer(frag):
     return result;
 
 ###### Function to calculate MFEs using RNAfold #################
-def energies(seq_list):
+def energies(seq_list, temperature):
     energy_list = []
 
-    energy_list = multiprocessing(rna_folder, [sequence for sequence in seq_list], 12)
+    energy_list = multiprocessing(rna_folder, [(sequence, temperature) for sequence in seq_list], 12)
     # for sequence in seq_list:
     #     #fc = RNA.fold_compound(str(sequence))
     #     (structure, MFE) = RNA.fold(str(sequence)) # calculate and define variables for mfe and structure
@@ -357,56 +292,265 @@ def write_wig(metric_list, step, name, outputfilename):
     w = open(outputfilename, 'w')
     w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start="+str(input_start_coordinate), "step="+str(step), "span="+str(step)))
     for metric in metric_list:
-        if metric == "#DIV/0!":
-            w.write("%s\n" % (metric))
+        #print(metric)
+        try:
+            if metric == "#DIV/0!":
+                w.write("%s\n" % (metric))
+            else:
+                metric = float(metric)
+                w.write("%f\n" % (metric))
+        except:
+            print("Error writing WIG file.", metric)
+
+if __name__ == "__main__":
+    #### Parsing arguments ####
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--input', type=str, required=True,
+                        help='input filename')
+    parser.add_argument('-s', type=int, default=10,
+                        help='step size')
+    parser.add_argument('-w', type=int, default=120,
+                        help='window size')
+    parser.add_argument('-r', type=int, default=30,
+                        help='randomizations')
+    parser.add_argument('-t', '--temp', type=int, default=37,
+                        help='Folding temperature')
+    parser.add_argument('-type', type=str, default='mono',
+                        help='randomization type')
+    parser.add_argument('-p', type=str, default='off',
+                        help='print to screen option (default off:1)')
+    parser.add_argument('--print_random', type=str, default='off',
+                        help='print to screen option (default off)')
+    parser.add_argument('--name', type=str, default = "UserInput",
+                        help='name of data being analyzed')
+    parser.add_argument('--split', type=str, default = "off",
+                        help='name of data being analyzed')
+
+    ###Required arguments for webserver:
+    parser.add_argument('--scan_out_path', type=str,
+                        help='ScanFold-Scan output path')
+    parser.add_argument('--zscore_wig_file_path', type=str,
+                        help='zscore_wig_file_path')
+    parser.add_argument('--mfe_wig_file_path', type=str,
+                        help='mfe_wig_file_path')
+    parser.add_argument('--ed_wig_file_path', type=str,
+                        help='ed_wig_file_path')
+    parser.add_argument('--pvalue_wig_file_path', type=str,
+                        help='pvalue_wig_file_path')
+    parser.add_argument('--fasta_file_path', type=str,
+                        help='fasta_file path')
+    parser.add_argument('--fasta_index', type=str,
+                        help='fasta index file path')
+
+    ### Arguments for IGV
+    parser.add_argument('--start', type=int,
+                        help='Input start coordinate')
+
+
+    ### input parms ###
+
+
+
+    args = parser.parse_args()
+
+    myfasta = args.input
+    step_size = int(args.s)
+    window_size = int(args.w)
+    randomizations = int(args.r)
+    temperature = int(args.temp)
+    type = str(args.type)
+    print_to_screen = str(args.p)
+    print_random = str(args.print_random)
+
+    scan_out_path = args.scan_out_path
+
+    mfe_wig_file_path = args.mfe_wig_file_path
+    zscore_wig_file_path = args.zscore_wig_file_path
+    pvalue_wig_file_path = args.pvalue_wig_file_path
+    ed_wig_file_path = args.ed_wig_file_path
+
+    name = args.name
+    fasta_file_path = args.fasta_file_path
+    fasta_index = args.fasta_index
+
+    split = args.split
+
+    ### IGV Args
+
+    input_start_coordinate = args.start
+
+    ##################### Main Script #########################################
+
+    ### Initialize the bigwig files
+    # MFE_wig = pyBigWig.open(mfe_wig_file_path, 'w')
+    # zscore_wig = pyBigWig.open(zscore_wig_file_path, 'w')
+    # pvalue_wig = pyBigWig.open(pvalue_wig_file_path, 'w')
+    # ED_wig = pyBigWig.open(ed_wig_file_path, 'w')
+
+
+
+    ### Create output file:
+    w = open(scan_out_path, 'w')
+
+    # create progress bar
+    # widgets = ['Test: ', Percentage(), ' ', Bar(marker='0',left='[',right=']'),
+    #            ' ', ETA(), ' ', FileTransferSpeed()] #see docs for other options
+
+    ### Create list for metrics to be written to bw via pyBigWig
+    MFE_list = []
+    zscore_list = []
+    pscore_list = []
+    ED_list = []
+
+
+    ##### Establish empty lists to capture calculated metrics per window ######
+    zscore_total = []
+    numerical_z = []
+    pscore_total = []
+    numerical_p = []
+    MFE_total = []
+    ED_total = []
+
+    # with open(myfasta, 'r') as forward_fasta:
+    with open (myfasta, 'r') as forward_fasta:
+        if '>' in forward_fasta.readlines()[0]:
+            print("Sequence in FASTA format...")
+            with open (myfasta, 'r') as forward_fasta:
+                for cur_record in SeqIO.parse(forward_fasta, "fasta"):
+                    ### get info about fasta files like name and sequence
+                    #read_name = cur_record.name #this reads fasta header (not reliable)
+                    seq = cur_record.seq
+                    if "-" in seq:
+                        seq.ungap("-")
+                        print("Gaps found in sequence.\n Removing Gaps...")
+                    #print(str(seq))
+                    print("Sequence Length: "+str(len(seq))+"nt")
+                    number_windows = int((len(seq)-int(window_size))/int(step_size)+1)
+                    print("Approximately "+str(int(number_windows))+" windows will be generated.")
+                    print("Sequence being scanned...")
+                    if len(seq) > 40000 :
+                        print(str(len(seq)))
+                        raise SystemExit('Input sequence is longer than 40000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
+                    length = len(seq)
+                    record_name = name
+
+                    # ### Add headers for bigwig files
+                    # """ Headers need to have the name and length of fasta sequence
+                    # Should be set up like XYZ_wig.addHeader("chromosomeName", length)
+                    # """
+                    # MFE_wig.addHeader([(str(record_name), int(length))])
+                    # zscore_wig.addHeader([(str(record_name), int(length))])
+                    # pvalue_wig.addHeader([(str(record_name), int(length))])
+                    # ED_wig.addHeader([(str(record_name), int(length))])
+
+                    ### Write the header for output:
+                    w.write("i\tj\tTemperature\tNative_dG\tZ-score\tP-score\tEnsembleDiversity\tSequence\tStructure\tCentroid\tWindowSize="+str(window_size)+" StepSize="+str(step_size)+" RandomizationCount="+str(randomizations)+" ShuffleType="+type+" Name="+record_name+"\n")
+                    i = 0
+                ##### Main routine using defined functions: ##########################################
+                ### Figure out length progress bar
+                    # pbar = ProgressBar(widgets=widgets, max_value=int(length))
+                    # print(int(length/step_size))
+                    # pbar.start()
+                    while i == 0 or i <= (length - window_size):
+                        #print(i)
+                        # pbar.update(i)
+                        start_nucleotide = i + input_start_coordinate # This will just define the start nucleotide coordinate value
+                        frag = seq[i:i+int(window_size)] # This breaks up sequence into fragments
+                        #print(frag)
+                        #print(str(len(frag)))
+                        start_nucleotide = i + input_start_coordinate
+                        end_nucleotide = start_nucleotide + window_size
+                        if -1 == 0:
+                            print("Magic")
+                        # if 'N' in frag:
+                        #     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str(frag)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\n")
+                        #     i += step_size #this ensures that the next iteration increases by "step size" length
+                        else:
+                            #print(start_nucleotide)
+                            #print(end_nucleotide)
+                            frag = frag.upper()
+                            frag = frag.transcribe()
+                            if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
+                                MFE = int(0.0)
+                                zscore = "00.00"
+                                ED = int(0.0)
+                                pscore = int(0.0)
+                                structure = "........................................................................................................................"
+                                centroid = "........................................................................................................................"
+                            else:
+                                #print(frag)
+                                frag = bytes(str(frag), 'utf-8')
+                                fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                                out = str(fc.stdout)
+                                test = list(out.split("\\n"))
+                                structure = test[1].split()[0].strip().strip("\\r")
+                                centroid = test[3].split()[0].strip().strip("\\r")
+                                MFE = test[1].split(" ", 1)[1]
+                                MFE = float(re.sub('[()]', '', MFE))
+
+                                ED = test[4].split()[9]
+                                MFE_total.append(float(MFE))
+                                ED_total.append(float(ED))
+                                seqlist = [] # creates the list we will be filling with sequence fragments
+                                seqlist.append(frag) # adds the native fragment to list
+                                scrambled_sequences = scramble(frag, randomizations, type)
+                                seqlist.extend(scrambled_sequences)
+                                energy_list = energies(seqlist, temperature)
+                                if print_random == "on":
+                                    print(energy_list)
+                                try:
+                                    zscore = round(zscore_function(energy_list, randomizations), 2)
+                                except:
+                                    zscore = zscore_function(energy_list, randomizations)
+                                zscore_total.append(zscore)
+
+                                #print(zscore)
+                                pscore = round(pscore_function(energy_list, randomizations), 2)
+                                #print(pscore)
+                                pscore_total.append(pscore)
+
+                ### Append metrics to list ###
+                                MFE_list.append(MFE)
+                                zscore_list.append(zscore)
+                                pscore_list.append(pscore)
+                                ED_list.append(ED)
+
+                            if print_to_screen == 'on':
+                                print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                            w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                            #gff3file.write()
+                            #pscore_wig.write()
+                            #zscore_wig.write()
+                            #ED_wig.write()
+                            #MFE_wig.write()
+
+                            i += step_size #this ensures that the next iteration increases by "step size" length
+
+                    for z in zscore_total:
+                        try:
+                            numerical_z.append(float(z))
+                        except ValueError:
+                            continue
+
+                    for p in pscore_total:
+                        try:
+                            numerical_p.append(float(p))
+                        except ValueError:
+                            continue
+                    window_count = len(zscore_total)
+
+                    mean_pscore = round(np.mean(numerical_p), 2)
+                    mean_zscore = round(np.mean(numerical_z), 2)
+                    mean_MFE = round(np.mean(MFE_total), 2)
+                    mean_ED = round(np.mean(ED_total), 2)
+
         else:
-            w.write("%f\n" % (metric))
-
-##################### Main Script #########################################
-
-### Initialize the bigwig files
-# MFE_wig = pyBigWig.open(mfe_wig_file_path, 'w')
-# zscore_wig = pyBigWig.open(zscore_wig_file_path, 'w')
-# pvalue_wig = pyBigWig.open(pvalue_wig_file_path, 'w')
-# ED_wig = pyBigWig.open(ed_wig_file_path, 'w')
-
-
-
-### Create output file:
-w = open(scan_out_path, 'w')
-
-# create progress bar
-# widgets = ['Test: ', Percentage(), ' ', Bar(marker='0',left='[',right=']'),
-#            ' ', ETA(), ' ', FileTransferSpeed()] #see docs for other options
-
-### Create list for metrics to be written to bw via pyBigWig
-MFE_list = []
-zscore_list = []
-pscore_list = []
-ED_list = []
-
-
-##### Establish empty lists to capture calculated metrics per window ######
-zscore_total = []
-numerical_z = []
-pscore_total = []
-numerical_p = []
-MFE_total = []
-ED_total = []
-
-# with open(myfasta, 'r') as forward_fasta:
-with open (myfasta, 'r') as forward_fasta:
-    if '>' in forward_fasta.readlines()[0]:
-        print("Sequence in FASTA format...")
-        with open (myfasta, 'r') as forward_fasta:
-            for cur_record in SeqIO.parse(forward_fasta, "fasta"):
-                ### get info about fasta files like name and sequence
-                #read_name = cur_record.name #this reads fasta header (not reliable)
-                seq = cur_record.seq
-                if "-" in seq:
-                    seq.ungap("-")
-                    print("Gaps found in sequence.\n Removing Gaps...")
-                #print(str(seq))
+            with open (myfasta, 'r') as forward_fasta:
+                print("Sequence not in FASTA format, attempting to convert. You can also resubmit sequence with a proper FASTA header (i.e. >SequenceName)")
+                raw_sequence = forward_fasta.read()
+                seq = re.sub("\n", "", raw_sequence.strip())
+                #print(seq)
                 print("Sequence Length: "+str(len(seq))+"nt")
                 number_windows = int((len(seq)-int(window_size))/int(step_size)+1)
                 print("Approximately "+str(int(number_windows))+" windows will be generated.")
@@ -416,18 +560,6 @@ with open (myfasta, 'r') as forward_fasta:
                     raise SystemExit('Input sequence is longer than 40000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
                 length = len(seq)
                 record_name = name
-
-                # ### Add headers for bigwig files
-                # """ Headers need to have the name and length of fasta sequence
-                # Should be set up like XYZ_wig.addHeader("chromosomeName", length)
-                # """
-                # MFE_wig.addHeader([(str(record_name), int(length))])
-                # zscore_wig.addHeader([(str(record_name), int(length))])
-                # pvalue_wig.addHeader([(str(record_name), int(length))])
-                # ED_wig.addHeader([(str(record_name), int(length))])
-
-                ### Write the header for output:
-                w.write("i\tj\tTemperature\tNative_dG\tZ-score\tP-score\tEnsembleDiversity\tSequence\tStructure\tCentroid\tWindowSize="+str(window_size)+" StepSize="+str(step_size)+" RandomizationCount="+str(randomizations)+" ShuffleType="+type+" Name="+record_name+"\n")
                 i = 0
             ##### Main routine using defined functions: ##########################################
             ### Figure out length progress bar
@@ -451,8 +583,7 @@ with open (myfasta, 'r') as forward_fasta:
                     else:
                         #print(start_nucleotide)
                         #print(end_nucleotide)
-                        frag = frag.upper()
-                        frag = frag.transcribe()
+                        # frag = frag.transcribe()
                         if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
                             MFE = int(0.0)
                             zscore = "00.00"
@@ -461,17 +592,20 @@ with open (myfasta, 'r') as forward_fasta:
                             structure = "........................................................................................................................"
                             centroid = "........................................................................................................................"
                         else:
-                            frag = bytes(frag, 'utf-8')
-                            subprocess.PIPE
-                            fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag, check=True, stdout=PIPE, stderr=PIPE)
-                            out = str(fc.stdout)
-                            test = list(out.split("\\n"))
-                            structure = test[1].split()[0]
-                            centroid = test[3].split()[0]
-                            MFE = test[1].split()[1]
-                            MFE = float(re.sub('[()]', '', MFE))
-                            ED = test[4].split()[9]
+                            frag = bytes(str(frag),'utf-8')
 
+                            fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                            out = str(fc.stdout)
+                            test = list(out.split("\\n")).strip().strip("\\r")
+                            structure = test[1].split()[0].strip().strip("\\r")
+                            centroid = test[3].split()[0].strip().strip("\\r")
+                            MFE = test[1].split(" ", 1)[1]
+                            MFE = float(re.sub('[()]', '', MFE))
+                            ED = float(test[4].split()[9])
+
+
+                            MFE_total.append(float(MFE))
+                            ED_total.append(float(ED))
                             seqlist = [] # creates the list we will be filling with sequence fragments
                             seqlist.append(frag) # adds the native fragment to list
                             scrambled_sequences = scramble(frag, randomizations, type)
@@ -525,133 +659,22 @@ with open (myfasta, 'r') as forward_fasta:
                 mean_MFE = round(np.mean(MFE_total), 2)
                 mean_ED = round(np.mean(ED_total), 2)
 
-    else:
-        with open (myfasta, 'r') as forward_fasta:
-            print("Sequence not in FASTA format, attempting to convert. You can also resubmit sequence with a proper FASTA header (i.e. >SequenceName)")
-            raw_sequence = forward_fasta.read()
-            seq = re.sub("\n", "", raw_sequence.strip())
-            #print(seq)
-            print("Sequence Length: "+str(len(seq))+"nt")
-            number_windows = int((len(seq)-int(window_size))/int(step_size)+1)
-            print("Approximately "+str(int(number_windows))+" windows will be generated.")
-            print("Sequence being scanned...")
-            if len(seq) > 40000 :
-                print(str(len(seq)))
-                raise SystemExit('Input sequence is longer than 40000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
-            length = len(seq)
-            record_name = name
-            i = 0
-        ##### Main routine using defined functions: ##########################################
-        ### Figure out length progress bar
-            # pbar = ProgressBar(widgets=widgets, max_value=int(length))
-            # print(int(length/step_size))
-            # pbar.start()
-            while i == 0 or i <= (length - window_size):
-                #print(i)
-                # pbar.update(i)
-                start_nucleotide = i + input_start_coordinate # This will just define the start nucleotide coordinate value
-                frag = seq[i:i+int(window_size)] # This breaks up sequence into fragments
-                #print(frag)
-                #print(str(len(frag)))
-                start_nucleotide = i + input_start_coordinate
-                end_nucleotide = start_nucleotide + window_size
-                if -1 == 0:
-                    print("Magic")
-                # if 'N' in frag:
-                #     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str(frag)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\n")
-                #     i += step_size #this ensures that the next iteration increases by "step size" length
-                else:
-                    #print(start_nucleotide)
-                    #print(end_nucleotide)
-                    # frag = frag.transcribe()
-                    if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
-                        MFE = int(0.0)
-                        zscore = "00.00"
-                        ED = int(0.0)
-                        pscore = int(0.0)
-                        structure = "........................................................................................................................"
-                        centroid = "........................................................................................................................"
-                    else:
-                        frag = bytes(frag, 'utf-8')
-                        subprocess.PIPE
-                        fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag, check=True, stdout=PIPE, stderr=PIPE)
-                        out = str(fc.stdout)
-                        test = list(out.split("\\n"))
-                        structure = test[1].split()[0]
-                        centroid = test[3].split()[0]
-                        MFE = test[1].split()[1]
-                        MFE = float(re.sub('[()]', '', MFE))
-                        ED = test[4].split()[9]
+    write_wig(MFE_list, step_size, name, mfe_wig_file_path)
+    write_wig(zscore_list, step_size, name, zscore_wig_file_path)
+    write_wig(pscore_list, step_size, name, pvalue_wig_file_path)
+    write_wig(ED_list, step_size, name, ed_wig_file_path)
 
-                        seqlist = [] # creates the list we will be filling with sequence fragments
-                        seqlist.append(frag) # adds the native fragment to list
-                        scrambled_sequences = scramble(frag, randomizations, type)
-                        seqlist.extend(scrambled_sequences)
-                        energy_list = energies(seqlist)
-                        if print_random == "on":
-                            print(energy_list)
-                        try:
-                            zscore = round(zscore_function(energy_list, randomizations), 2)
-                        except:
-                            zscore = zscore_function(energy_list, randomizations)
-                        zscore_total.append(zscore)
-
-                        #print(zscore)
-                        pscore = round(pscore_function(energy_list, randomizations), 2)
-                        #print(pscore)
-                        pscore_total.append(pscore)
-
-        ### Append metrics to list ###
-                        MFE_list.append(MFE)
-                        zscore_list.append(zscore)
-                        pscore_list.append(pscore)
-                        ED_list.append(ED)
-
-                    if print_to_screen == 'on':
-                        print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
-                    w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
-                    #gff3file.write()
-                    #pscore_wig.write()
-                    #zscore_wig.write()
-                    #ED_wig.write()
-                    #MFE_wig.write()
-
-                    i += step_size #this ensures that the next iteration increases by "step size" length
-
-            for z in zscore_total:
-                try:
-                    numerical_z.append(float(z))
-                except ValueError:
-                    continue
-
-            for p in pscore_total:
-                try:
-                    numerical_p.append(float(p))
-                except ValueError:
-                    continue
-            window_count = len(zscore_total)
-
-            mean_pscore = round(np.mean(numerical_p), 2)
-            mean_zscore = round(np.mean(numerical_z), 2)
-            mean_MFE = round(np.mean(MFE_total), 2)
-            mean_ED = round(np.mean(ED_total), 2)
-
-write_wig(MFE_list, step_size, name, mfe_wig_file_path)
-write_wig(zscore_list, step_size, name, zscore_wig_file_path)
-write_wig(pscore_list, step_size, name, pvalue_wig_file_path)
-write_wig(ED_list, step_size, name, ed_wig_file_path)
-
-write_fasta(seq, fasta_file_path, name)
-write_fai(seq, fasta_index, name)
+    write_fasta(seq, fasta_file_path, name)
+    write_fai(seq, fasta_index, name)
 
 
 
 
-if split == "on":
-    print("Completed ScanFold-Scan, intial results shown below.\n ScanFold-Fold is running now")
+    if split == "on":
+        print("Completed ScanFold-Scan, intial results shown below.\n ScanFold-Fold is running now")
 
-print("Mean MFE = "+str(mean_MFE))
-print("Mean Z-score = "+str(mean_zscore))
-print("Mean P-value = "+str(mean_pscore))
-print("Mean Ensemble Diversity = "+str(mean_ED))
-print("ScanFold-Scan complete, find output files below")
+    print("Mean MFE = "+str(mean_MFE))
+    print("Mean Z-score = "+str(mean_zscore))
+    print("Mean P-value = "+str(mean_pscore))
+    print("Mean Ensemble Diversity = "+str(mean_ED))
+    print("ScanFold-Scan complete, find output files below")
