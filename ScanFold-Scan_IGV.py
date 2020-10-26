@@ -240,7 +240,7 @@ def rna_folder(arg):
     out = str(fc.stdout).strip().strip("\\r")
     test = list(out.split("\\n"))
     #print(test[1])
-    MFE = test[1].split(" ", 1)[1]
+    MFE = test[1].split(" ", 1)[1].strip().strip("\\r")
     #print(MFE)
     try:
         #MFE = str(MFE)
