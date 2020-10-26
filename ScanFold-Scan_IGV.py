@@ -235,8 +235,8 @@ def zscore_function(energy_list, randomizations):
 
 def rna_folder(arg):
     (frag, temperature) = arg
-    frag = bytes(str(frag), 'utf-8')
-    fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    frag_bytes = bytes(str(frag), 'utf-8')
+    fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag_bytes, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out = str(fc.stdout).strip().strip("\\r")
     test = list(out.split("\\n"))
     #print(test[1])
@@ -479,8 +479,8 @@ if __name__ == "__main__":
                                 centroid = "........................................................................................................................"
                             else:
                                 #print(frag)
-                                frag = bytes(str(frag), 'utf-8')
-                                fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                frag_bytes = bytes(str(frag), 'utf-8')
+                                fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag_bytes, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
                                 out = str(fc.stdout)
                                 test = list(out.split("\\n"))
@@ -592,11 +592,11 @@ if __name__ == "__main__":
                             structure = "........................................................................................................................"
                             centroid = "........................................................................................................................"
                         else:
-                            frag = bytes(str(frag),'utf-8')
+                            frag_bytes = bytes(str(frag),'utf-8')
 
-                            fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                            fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag_bytes, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                             out = str(fc.stdout)
-                            test = list(out.split("\\n")).strip().strip("\\r")
+                            test = list(out.split("\\n"))
                             structure = test[1].split()[0].strip().strip("\\r")
                             centroid = test[3].split()[0].strip().strip("\\r")
                             MFE = test[1].split(" ", 1)[1]
@@ -610,7 +610,7 @@ if __name__ == "__main__":
                             seqlist.append(frag) # adds the native fragment to list
                             scrambled_sequences = scramble(frag, randomizations, type)
                             seqlist.extend(scrambled_sequences)
-                            energy_list = energies(seqlist)
+                            energy_list = energies(seqlist, temperature)
                             if print_random == "on":
                                 print(energy_list)
                             try:
