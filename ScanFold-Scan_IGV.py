@@ -486,7 +486,7 @@ if __name__ == "__main__":
                                 test = list(out.split("\\n"))
                                 structure = test[1].split()[0].strip().strip("\\r")
                                 centroid = test[3].split()[0].strip().strip("\\r")
-                                MFE = test[1].split(" ", 1)[1]
+                                MFE = test[1].split(" ", 1)[1].strip().strip("\\r")
                                 MFE = float(re.sub('[()]', '', MFE))
 
                                 ED = test[4].split()[9]
@@ -599,7 +599,7 @@ if __name__ == "__main__":
                             test = list(out.split("\\n"))
                             structure = test[1].split()[0].strip().strip("\\r")
                             centroid = test[3].split()[0].strip().strip("\\r")
-                            MFE = test[1].split(" ", 1)[1]
+                            MFE = test[1].split(" ", 1)[1].strip().strip("\\r")
                             MFE = float(re.sub('[()]', '', MFE))
                             ED = float(test[4].split()[9])
 
