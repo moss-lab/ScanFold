@@ -27,7 +27,6 @@ import numpy as np
 sys.path.append('/home/randrews/ViennaRNA/lib/python3.6/site-packages/')
 sys.path.append('/usr/local/lib/python3.6/site-packages')
 #import RNA
-import subprocess
 import random
 
 from ScanFoldSharedIGV import *
@@ -275,17 +274,8 @@ if __name__ == "__main__":
                 centroid = "........................................................................................................................"
             else:
                 #print(frag)
-                frag_bytes = bytes(str(frag), 'utf-8')
-                fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag_bytes, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                structure, centroid, MFE, ED = rna_fold(frag, temperature)
 
-                out = str(fc.stdout)
-                test = list(out.split("\\n"))
-                structure = test[1].split()[0].strip().strip("\\r")
-                centroid = test[3].split()[0].strip().strip("\\r")
-                MFE = test[1].split(" ", 1)[1].strip().strip("\\r")
-                MFE = float(re.sub('[()]', '', MFE))
-
-                ED = test[4].split()[9]
                 MFE_total.append(float(MFE))
                 ED_total.append(float(ED))
                 seqlist = [] # creates the list we will be filling with sequence fragments

@@ -182,25 +182,27 @@ def zscore_function(energy_list, randomizations):
         zscore = float(00.00)
     return zscore;
 
-def rna_folder(arg):
-    (frag, temperature) = arg
+def rna_fold(frag, temperature):
     frag_bytes = bytes(str(frag), 'utf-8')
     fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag_bytes, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out = str(fc.stdout).strip().strip("\\r")
-    test = out.split("\\n")
-    #print(test[1])
+    out = str(fc.stdout)
+    test = list(out.split("\\n"))
+    structure = test[1].split()[0].strip().strip("\\r")
+    centroid = test[3].split()[0].strip().strip("\\r")
     MFE = test[1].split(" ", 1)[1].strip().strip("\\r")
-    #print(MFE)
     try:
-        #MFE = str(MFE)
-        #print(MFE)
         MFE = float(re.sub('[()]', '', MFE))
-        #print(MFE)
     except:
-        #print(MFE)
         print("Error parsing MFE values", test)
-    return MFE;
+    ED = test[4].split()[9]
 
+    return (structure, centroid, MFE, ED)
+
+    
+def rna_folder(arg):
+    (frag, temperature) = arg
+    _, _, MFE, _ = rna_fold(frag, temperature)
+    return MFE
 
 ###### Function to calculate MFEs using RNAfold #################
 def energies(seq_list, temperature):
