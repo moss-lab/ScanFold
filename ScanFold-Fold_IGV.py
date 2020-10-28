@@ -1245,6 +1245,8 @@ for k, v in nuc_dict.items():
     nucleotide = v.nucleotide
     full_fasta_sequence += nucleotide
 
+dbn_files_to_combine = []
+
 #If specified, refold and generate global fold of input sequence
 if global_refold == True:
     #fold the full fasta input as a fold compound (full_fc) using model params (md)
@@ -1278,10 +1280,15 @@ if global_refold == True:
     dbn_log_file.write(">"+str(name)+"\Refolded with -1 constraints MFE="+str(refolded_filter1_MFE)+"\n"+str(full_fasta_sequence)+"\n"+str(refolded_filter1_structure)+"\n")
     dbn_log_file.write(">"+str(name)+"\Refolded with -2 constraints MFE="+str(refolded_filter2_MFE)+"\n"+str(full_fasta_sequence)+"\n"+str(refolded_filter2_structure)+"\n")
     dbn_log_file.close()
-    os.system(str("cat "+str(dbn_file_path)+" "+str(dbn_file_path1)+" "+str(dbn_file_path2)+" "+str(dbn_file_path3)+" > "+str(dbn_file_path4)))
-if global_refold == False:
-    os.system(str("cat "+str(dbn_file_path1)+" "+str(dbn_file_path2)+" "+str(dbn_file_path3)+" > "+str(dbn_file_path4)))
+    dbn_files_to_combine = [str(dbn_file_path), str(dbn_file_path1), str(dbn_file_path2), str(dbn_file_path3)]
+else:
+    dbn_files_to_combine = [str(dbn_file_path1), str(dbn_file_path2), str(dbn_file_path3)]
 
+with open(str(dbn_file_path4), 'w') as outfile:
+    for fname in dbn_files_to_combine:
+        with open(fname) as infile:
+            for line in infile:
+                outfile.write(line)
 
 #############
 #Begin the structure extract process
