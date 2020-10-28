@@ -182,9 +182,11 @@ def zscore_function(energy_list, randomizations):
         zscore = float(00.00)
     return zscore;
 
+
 def rna_fold(frag, temperature):
     frag_bytes = bytes(str(frag), 'utf-8')
-    fc = subprocess.run(["RNAfold", "-p", "-T", str(temperature)], input=frag_bytes, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    args = ["RNAfold", "-p", "-T", str(temperature)]
+    fc = subprocess.run(args, input=frag_bytes, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out = str(fc.stdout)
     test = list(out.split("\\n"))
     structure = test[1].split()[0].strip().strip("\\r")
@@ -194,11 +196,26 @@ def rna_fold(frag, temperature):
         MFE = float(re.sub('[()]', '', MFE))
     except:
         print("Error parsing MFE values", test)
-    ED = test[4].split()[9]
+    ED = float(test[4].split()[9])
 
     return (structure, centroid, MFE, ED)
 
-    
+def rna_refold(frag, temperature, constraint_file):
+    args = ["RNAfold", "-p", "-T", str(temperature), '-C', constraint_file]
+    fc = subprocess.run(args, input=frag, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out = str(fc.stdout)
+    test = out.splitlines()
+    structure = test[2].split()[0]
+    centroid = test[4].split()[0]
+    MFE = test[2].split(" ", 1)[1]
+    try:
+        MFE = float(re.sub('[()]', '', MFE))
+    except:
+        print("Error parsing MFE values", test)
+    ED = float(test[5].split()[-1])
+
+    return (structure, centroid, MFE, ED)
+
 def rna_folder(arg):
     (frag, temperature) = arg
     _, _, MFE, _ = rna_fold(frag, temperature)

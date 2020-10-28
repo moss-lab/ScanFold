@@ -39,7 +39,6 @@ import os
 # sys.path.append('/Users/ryanandrews/Desktop/programs/RNAstructure/exe')
 # import RNAstructure
 sys.path.append('/usr/local/lib/python3.6/site-packages')
-import RNA
 import time
 import argparse
 from itertools import repeat
@@ -1253,28 +1252,15 @@ if global_refold == True:
     print("Refolding full sequence using ScanFold results as constraints...")
     elapsed_time = round((time.time() - start_time), 2)
     print("Elapsed time: "+str(elapsed_time)+"s")
-    md = RNA.md()
-    md.temperature = int(temperature)
 
     #refold from -1 constraints
-    fc = RNA.fold_compound(str(full_fasta_sequence), md)
-    dbn_file_filter1 = open(dbn_file_path2, "r")
-    lines = dbn_file_filter1.readlines()
-    filter1constraints = str(lines[2])
-    refolded1filter = fc.hc_add_from_db(filter1constraints)
-    (refolded_filter1_structure, refolded_filter1_MFE) = fc.mfe()
+    refolded_filter1_structure, _, refolded_filter1_MFE, _ = rna_refold(full_fasta_sequence, int(temperature), dbn_file_path2)
 
     #refold from -2 constraints
-    fc = RNA.fold_compound(str(full_fasta_sequence), md)
-    dbn_file_filter2 = open(dbn_file_path3, "r")
-    lines = dbn_file_filter2.readlines()
-    filter2constraints = str(lines[2])
-    refolded2filter = fc.hc_add_from_db(filter2constraints)
-    (refolded_filter2_structure, refolded_filter2_MFE) = fc.mfe()
+    refolded_filter2_structure, _, refolded_filter2_MFE, _ = rna_refold(full_fasta_sequence, int(temperature), dbn_file_path3)
 
     #extract the structure
-    full_fc = RNA.fold_compound(str(full_fasta_sequence), md)
-    (full_structure, full_MFE) = full_fc.mfe()
+    full_structure, _, full_MFE, _ = rna_fold(full_fasta_sequence, int(temperature))
 
     dbn_log_file.write(">"+str(name)+"\tGlobal Full MFE="+str(full_MFE)+"\n"+str(full_fasta_sequence)+"\n"+str(full_structure)+"\n")
     dbn_log_file.write(">"+str(name)+"\Refolded with -1 constraints MFE="+str(refolded_filter1_MFE)+"\n"+str(full_fasta_sequence)+"\n"+str(refolded_filter1_structure)+"\n")
@@ -1307,12 +1293,13 @@ shuffle = "mono"
 bond_order = []
 bond_count = 0
 
+dbn_file_filter2 = open(dbn_file_path3, "r")
+lines = dbn_file_filter2.readlines()
+filter2constraints = str(lines[2])
+
 #Read the structure of -2 filter2constraints
 if global_refold == False:
     #refold from -2 constraints
-    dbn_file_filter2 = open(dbn_file_path3, "r")
-    lines = dbn_file_filter2.readlines()
-    filter2constraints = str(lines[2])
     full_fasta_sequence = str(lines[1])
 
 structure_raw = filter2constraints
@@ -1444,15 +1431,23 @@ with open(structure_extract_file, "w") as se:
     se.write("ScanFold predicted structures which contain at least one base pair with Zavg < -2 have been extracted from "+str(name)+" results (sequence length "+str(length)+"nt) and have been refolded using RNAfold to determine their individual MFE, structure, z-score (using 100X randomizations), and ensemble diversity score.\n")
     for i in extracted_structure_list[:]:
         frag = i.sequence
-        fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
-        fc.pf() # performs partition function calculations
-        frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
-        (MFE_structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
+        # fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
+        # fc.pf() # performs partition function calculations
+        # frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
+        # (MFE_structure, MFE) = fc.mfe() # calculate and define variables for mfe and structure
+        # MFE = round(MFE, 2)
+        # MFE_total.append(MFE)
+        # (centroid, distance) = fc.centroid() # calculate and define variables for centroid
+        # ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
+        # ED_total.append(ED)            #print(structure)
+
+        MFE_structure, centroid, MFE, ED = rna_fold(str(frag), temperature)
         MFE = round(MFE, 2)
         MFE_total.append(MFE)
-        (centroid, distance) = fc.centroid() # calculate and define variables for centroid
-        ED = round(fc.mean_bp_distance(), 2) # this caclulates ED based on last calculated partition funciton
+        ED = round(ED, 2) # this caclulates ED based on last calculated partition funciton
         ED_total.append(ED)            #print(structure)
+
+
         #fmfe = fc.pbacktrack()
         #print(str(fmfe))
         seqlist = [] # creates the list we will be filling with sequence fragments
