@@ -184,19 +184,18 @@ def zscore_function(energy_list, randomizations):
 
 
 def rna_fold(frag, temperature):
-    frag_bytes = bytes(str(frag), 'utf-8')
     args = ["RNAfold", "-p", "-T", str(temperature)]
-    fc = subprocess.run(args, input=frag_bytes, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    fc = subprocess.run(args, input=str(frag), check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out = str(fc.stdout)
-    test = list(out.split("\\n"))
-    structure = test[1].split()[0].strip().strip("\\r")
-    centroid = test[3].split()[0].strip().strip("\\r")
-    MFE = test[1].split(" ", 1)[1].strip().strip("\\r")
+    test = out.splitlines()
+    structure = test[1].split()[0]
+    centroid = test[3].split()[0]
+    MFE = test[1].split(" ", 1)[1]
     try:
         MFE = float(re.sub('[()]', '', MFE))
     except:
         print("Error parsing MFE values", test)
-    ED = float(test[4].split()[9])
+    ED = float(test[4].split()[-1])
 
     return (structure, centroid, MFE, ED)
 
