@@ -617,8 +617,8 @@ if __name__ == "__main__":
         z_score_list = []
         bp_dict = {}
 
-        #Read all lines from ScanFold-Scan file (exept header)
-        lines = f.readlines()[1:]
+        #Read all lines from ScanFold-Scan output file (this assumes no header)
+        lines = f.readlines()[0:]
 
         #Generate nucleotide dictionary to assign each nucleotide in sequence a key
         nuc_dict = NucleotideDictionary(lines)

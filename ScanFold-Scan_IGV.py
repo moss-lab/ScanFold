@@ -155,7 +155,7 @@ if __name__ == "__main__":
 
     ### IGV Args
 
-    input_start_coordinate = args.start
+    input_start_coordinate = args.start+1
 
     ##################### Main Script #########################################
 
@@ -215,7 +215,7 @@ if __name__ == "__main__":
                 raw_sequence = forward_fasta.read()
                 seq = re.sub("\n", "", raw_sequence.strip())
                 #print(seq)
-                
+
 
     print("Sequence Length: "+str(len(seq))+"nt")
     number_windows = int((len(seq)-int(window_size))/int(step_size)+1)
