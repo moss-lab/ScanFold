@@ -75,8 +75,13 @@ def connectedToLast(edgeList,nuclList,lastCh):
     if b==lastCh: D[a]=1
   for i in range(2):
     for edge in edgeList:
-      a = edge[0]; b = edge[1]
-      if D[b]==1: D[a]=1
+      try:
+        a = edge[0]; b = edge[1]
+        #print(a, b)
+        #print(edge)
+        if D[b]==1: D[a]=1
+      except:
+        continue
   ok = 0
   for x in nuclList:
     if x!=lastCh and D[x]==0: return 0

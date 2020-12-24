@@ -20,6 +20,7 @@ import time
 import sys
 import argparse
 import string
+import math
 # not needed anymore
 # import pyBigWig
 import re
@@ -66,19 +67,43 @@ def scramble(text, randomizations, type):
 
     return frag_seqs;
 
-def write_wig(metric_list, step, name, outputfilename):
+def write_wig(metric_list, step, name, outputfilename, strand):
     w = open(outputfilename, 'w')
-    w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start="+str(input_start_coordinate), "step="+str(step), "span="+str(step)))
-    for metric in metric_list:
-        #print(metric)
-        try:
-            if metric == "#DIV/0!":
-                w.write("%s\n" % (metric))
-            else:
-                metric = float(metric)
-                w.write("%f\n" % (metric))
-        except:
-            print("Error writing WIG file.", metric)
+    if strand == "forward":
+        w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start="+str(input_start_coordinate), "step="+str(step), "span="+str(step)))
+        for metric in metric_list:
+            #print(metric)
+            try:
+                if metric == "#DIV/0!":
+                    w.write("%s\n" % (metric))
+                else:
+                    metric = float(metric)
+                    w.write("%f\n" % (metric))
+            except:
+                print("Error writing WIG file.", metric)
+
+    if strand == "reverse":
+        seqend = input_start_coordinate + length
+        num_windows = math.floor((length-window_size)/step)
+        remainder = length-num_windows*step
+        revstart = seqend - ((num_windows+2)*(step))
+        w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start="+str(revstart), "step="+str(step), "span="+str(step)))
+        for metric in reversed(metric_list):
+            #print(metric)
+            try:
+                if metric == "#DIV/0!":
+                    w.write("%s\n" % (metric))
+                else:
+                    metric = float(metric)
+                    w.write("%f\n" % (metric))
+            except:
+                print("Error writing WIG file.", metric)
+
+def transcribe(seq):
+    #Function to covert T nucleotides to U nucleotides
+    for ch in seq:
+        rna_seq = seq.replace('T', 'U')
+        return(rna_seq)
 
 if __name__ == "__main__":
     #### Parsing arguments ####
@@ -103,6 +128,8 @@ if __name__ == "__main__":
                         help='name of data being analyzed')
     parser.add_argument('--split', type=str, default = "off",
                         help='name of data being analyzed')
+    parser.add_argument('-d', type=str, default = "forward",
+                        help='strand of genome (forward or reverse; default forward)')
 
     ###Required arguments for webserver:
     parser.add_argument('--scan_out_path', type=str,
@@ -119,6 +146,7 @@ if __name__ == "__main__":
                         help='fasta_file path')
     parser.add_argument('--fasta_index', type=str,
                         help='fasta index file path')
+
 
     ### Arguments for IGV
     parser.add_argument('--start', type=int,
@@ -152,6 +180,8 @@ if __name__ == "__main__":
     fasta_index = args.fasta_index
 
     split = args.split
+
+    strand = args.d
 
     ### IGV Args
 
@@ -216,16 +246,37 @@ if __name__ == "__main__":
                 seq = re.sub("\n", "", raw_sequence.strip())
                 #print(seq)
 
+    seq = seq.upper()
+    seq = transcribe(seq)
+    length = len(seq)
+    record_name = name
 
     print("Sequence Length: "+str(len(seq))+"nt")
-    number_windows = int((len(seq)-int(window_size))/int(step_size)+1)
+    number_windows = ((length+1)-window_size)/step_size
+    #print(number_windows)
+    if number_windows < float(1.0):
+        number_windows = ((length+1)-window_size)/step_size
+    else:
+        number_windows = math.floor(((length+1)-window_size)/step_size)
+
+    #print(length, step_size, window_size)
     print("Approximately "+str(int(number_windows))+" windows will be generated.")
     print("Sequence being scanned...")
     if len(seq) > 40000 :
         print(str(len(seq)))
         raise SystemExit('Input sequence is longer than 40000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
-    length = len(seq)
-    record_name = name
+
+    ### Need to calculate reverse strand start coordinate (flipping output)
+    print("Remove LINES about REVERSE STRAND")
+    strand = "reverse"
+    if strand == "reverse":
+        seqend = input_start_coordinate + length-1
+        remainder = length-(number_windows*step_size)
+        revstart = seqend - ((number_windows)*(step_size))
+        print(remainder, seqend, revstart)
+    else:
+        remainder = length-number_windows*step_size
+        seqend = input_start_coordinate + length-1
 
     # ### Add headers for bigwig files
     # """ Headers need to have the name and length of fasta sequence
@@ -274,6 +325,8 @@ if __name__ == "__main__":
                 centroid = "........................................................................................................................"
             else:
                 #print(frag)
+                frag = frag.upper()
+                frag = transcribe(frag)
                 structure, centroid, MFE, ED = rna_fold(frag, temperature)
 
                 MFE_total.append(float(MFE))
@@ -312,6 +365,75 @@ if __name__ == "__main__":
             #MFE_wig.write()
 
             i += step_size #this ensures that the next iteration increases by "step size" length
+    ### Add a final window if the full sequence was not covered ###
+    else:
+        print(remainder, seqend)
+        print(str(int(seqend+1)-window_size), str(seqend))
+        if remainder > 0:
+            #print(i)
+            # pbar.update(i)
+            start_nucleotide = str((seqend)-window_size)
+            end_nucleotide = str(seqend)
+            frag = seq[(int(length))-window_size:int(length)] # This breaks up sequence into fragments
+            # print(frag)
+            # print(str(len(frag)))
+            if -1 == 0:
+                print("Magic")
+            # if 'N' in frag:
+            #     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str(frag)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\n")
+            #     i += step_size #this ensures that the next iteration increases by "step size" length
+            else:
+                #print(start_nucleotide)
+                #print(end_nucleotide)
+                if do_upper_transcribe:
+                    frag = frag.upper()
+                    frag = frag.transcribe()
+                if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
+                    MFE = int(0.0)
+                    zscore = "00.00"
+                    ED = int(0.0)
+                    pscore = int(0.0)
+                    structure = "........................................................................................................................"
+                    centroid = "........................................................................................................................"
+                else:
+                    #print(frag)
+                    structure, centroid, MFE, ED = rna_fold(frag, temperature)
+
+                    MFE_total.append(float(MFE))
+                    ED_total.append(float(ED))
+                    seqlist = [] # creates the list we will be filling with sequence fragments
+                    seqlist.append(frag) # adds the native fragment to list
+                    scrambled_sequences = scramble(frag, randomizations, type)
+                    seqlist.extend(scrambled_sequences)
+                    energy_list = energies(seqlist, temperature)
+                    if print_random == "on":
+                        print(energy_list)
+                    try:
+                        zscore = round(zscore_function(energy_list, randomizations), 2)
+                    except:
+                        zscore = zscore_function(energy_list, randomizations)
+                    zscore_total.append(zscore)
+
+                    #print(zscore)
+                    pscore = round(pscore_function(energy_list, randomizations), 2)
+                    #print(pscore)
+                    pscore_total.append(pscore)
+
+    ### Append metrics to list ###
+                    MFE_list.append(MFE)
+                    zscore_list.append(zscore)
+                    pscore_list.append(pscore)
+                    ED_list.append(ED)
+
+                if print_to_screen == 'on':
+                    print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+                #gff3file.write()
+                #pscore_wig.write()
+                #zscore_wig.write()
+                #ED_wig.write()
+                #MFE_wig.write()
+
 
     for z in zscore_total:
         try:
@@ -324,17 +446,17 @@ if __name__ == "__main__":
             numerical_p.append(float(p))
         except ValueError:
             continue
+
     window_count = len(zscore_total)
 
     mean_pscore = round(np.mean(numerical_p), 2)
     mean_zscore = round(np.mean(numerical_z), 2)
     mean_MFE = round(np.mean(MFE_total), 2)
     mean_ED = round(np.mean(ED_total), 2)
-
-    write_wig(MFE_list, step_size, name, mfe_wig_file_path)
-    write_wig(zscore_list, step_size, name, zscore_wig_file_path)
-    write_wig(pscore_list, step_size, name, pvalue_wig_file_path)
-    write_wig(ED_list, step_size, name, ed_wig_file_path)
+    write_wig(MFE_list, step_size, name, mfe_wig_file_path, strand)
+    write_wig(zscore_list, step_size, name, zscore_wig_file_path, strand)
+    write_wig(pscore_list, step_size, name, pvalue_wig_file_path, strand)
+    write_wig(ED_list, step_size, name, ed_wig_file_path, strand)
 
     write_fasta(seq, fasta_file_path, name)
     write_fai(seq, fasta_index, name)

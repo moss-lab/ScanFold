@@ -45,6 +45,8 @@ from itertools import repeat
 from functools import partial
 #for mono z-score
 import random
+from io import StringIO
+import tempfile
 
 from ScanFoldSharedIGV import *
 
@@ -292,6 +294,7 @@ def write_ct(base_pair_dictionary, filename, filter, strand):
     #Function to write connectivity table files from a list of best i-j pairs
     w = open(filename, 'w')
     w.write((str(len(base_pair_dictionary))+"\t"+name+"_Filter="+str(filter)+"\n"))
+    strand = 1
     if strand == 1:
         for k, v in base_pair_dictionary.items():
             #print(start_coordinate)
@@ -416,81 +419,126 @@ def write_wig_dict(nucleotide_dictionary, outputfilename, name):
 
     w = open(outputfilename, 'w')
     #write wig file header
-    w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start=0", "step=1", "span=1"))
+    w.write("%s %s %s %s %s\n" % ("fixedStep", "chrom="+name, "start="+str(start_coordinate), "step=1", "span=1"))
 
     #write values of zscores
-    for k, v in nucleotide_dictionary.items():
-        w.write("%f\n" % (v.zscore))
+    if strand == "reverse":
+        for k, v, in sorted(nucleotide_dictionary, reverse=True):
+            w.write("%f\n" % (v.zscore))
+    else:
+        for k, v in nucleotide_dictionary.items():
+            w.write("%f\n" % (v.zscore))
 
-def write_bp(base_pair_dictionary, filename, start_coordinate):
+def write_bp(base_pair_dictionary, filename, start_coordinate, bpstrand, length):
+    bpstrand = "reverse"
+    with open(filename, 'w') as w:
+            #set color for bp file (igv format)
+        w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 55, 129, 255, str("Less than -2 "+str(minz))))
+        w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 89, 222, 111, "-1 to -2"))
+        w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 236, 236, 136, "0 to -1"))
+        w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 199, 199, 199, "0"))
+        w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 228, 228, 228, "0 to 1"))
+        w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 243, 243, 243, "1 to 2"))
+        w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 247, 247, 247, str("Greater than 2")))
+        reverse_list = []
+        i = 0
+        for k, v in base_pair_dictionary.items():
+            #choose color
+            if float(v.zscore) < float(-2):
+                score = str(0)
+                #print(k, v.zscore, score)
 
-    w = open(filename, 'w')
-        #set color for bp file (igv format)
-    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 55, 129, 255, str("Less than -2 "+str(minz))))
-    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 89, 222, 111, "-1 to -2"))
-    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 236, 236, 136, "0 to -1"))
-    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 199, 199, 199, "0"))
-    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 228, 228, 228, "0 to 1"))
-    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 243, 243, 243, "1 to 2"))
-    w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 247, 247, 247, str("Greater than 2")))
+            elif (float(v.zscore) < int(-1)) and (float(v.zscore) >= -2):
+                score = str(1)
+                #print(k, v.zscore, score)
 
-    i = 0
-    for k, v in base_pair_dictionary.items():
-        #choose color
-        if float(v.zscore) < float(-2):
-            score = str(0)
-            #print(k, v.zscore, score)
+            elif (float(v.zscore) < int(0)) and (float(v.zscore) >= -1):
+                score = str(2)
+                #print(k, v.zscore, score)
 
-        elif (float(v.zscore) < int(-1)) and (float(v.zscore) >= -2):
-            score = str(1)
-            #print(k, v.zscore, score)
+            elif float(v.zscore) == 0 :
+                score = str(3)
+                #print(k, v.zscore, score)
 
-        elif (float(v.zscore) < int(0)) and (float(v.zscore) >= -1):
-            score = str(2)
-            #print(k, v.zscore, score)
+            elif 0 < float(v.zscore) <= 1:
+                score = str(4)
+                #print(k, v.zscore, score)
 
-        elif float(v.zscore) == 0 :
-            score = str(3)
-            #print(k, v.zscore, score)
+            elif 1 < float(v.zscore) <= 2:
+                score = str(5)
+                #print(k, v.zscore, score)
 
-        elif 0 < float(v.zscore) <= 1:
-            score = str(4)
-            #print(k, v.zscore, score)
+            elif float(v.zscore) > 2:
+                score = str(6)
+                #print(k, v.zscore, score)
 
-        elif 1 < float(v.zscore) <= 2:
-            score = str(5)
-            #print(k, v.zscore, score)
-
-        elif float(v.zscore) > 2:
-            score = str(6)
-            #print(k, v.zscore, score)
-
-        else:
-            print(k, v.zscore, score)
-
-
-        score = str(score)
-
-        # ensure coordinates to start at 1 to match with converted fasta file
-        sc = int(int(start_coordinate)-1)
-        #print(length)
+            else:
+                print(k, v.zscore, score)
 
 
-        if int(v.icoordinate) < int(v.jcoordinate):
-            #w.write("%d\t%d\t%f\n" % (k, int(v.jcoordinate), float(-(math.log10(probability)))))
-            # print(name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score)
-            # print(name, str(int(v.icoordinate)-sc), str(int(v.icoordinate)-sc), str(int(v.jcoordinate)-sc), str(int(v.jcoordinate)-sc), score)
-            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
-        elif int(v.icoordinate) > int(v.jcoordinate):
-            # print(name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score)
-            # print(name, str(int(v.icoordinate)-sc), str(int(v.icoordinate)-sc), str(int(v.jcoordinate)-sc), str(int(v.jcoordinate)-sc), score)
-            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
-        elif int(v.icoordinate) == int(v.jcoordinate):
-            # print(name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score)
-            # print(name, str(int(v.icoordinate)-sc), str(int(v.icoordinate)-sc), str(int(v.jcoordinate)-sc), str(int(v.jcoordinate)-sc), score)
-            w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, k, k, int(v.jcoordinate), int(v.jcoordinate), score))
-        else:
-            print("2 Error at:", k)
+            score = str(score)
+
+            # ensure coordinates to start at 1 to match with converted fasta file
+            sc = int(int(start_coordinate)-1)
+            #print(length)
+
+            if int(v.icoordinate) < int(v.jcoordinate):
+                #w.write("%d\t%d\t%f\n" % (k, int(v.jcoordinate), float(-(math.log10(probability)))))
+                # print(name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score)
+                # print(name, str(int(v.icoordinate)-sc), str(int(v.icoordinate)-sc), str(int(v.jcoordinate)-sc), str(int(v.jcoordinate)-sc), score)
+                if bpstrand == "forward":
+                    w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
+                reverse_list.append(list([name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score]))
+
+            elif int(v.icoordinate) > int(v.jcoordinate):
+                # print(name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score)
+                # print(name, str(int(v.icoordinate)-sc), str(int(v.icoordinate)-sc), str(int(v.jcoordinate)-sc), str(int(v.jcoordinate)-sc), score)
+                if bpstrand == "forward":
+                    w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score))
+                reverse_list.append(list([name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score]))
+
+            elif int(v.icoordinate) == int(v.jcoordinate):
+                # print(name, int(v.icoordinate), int(v.icoordinate), int(v.jcoordinate), int(v.jcoordinate), score)
+                # print(name, str(int(v.icoordinate)-sc), str(int(v.icoordinate)-sc), str(int(v.jcoordinate)-sc), str(int(v.jcoordinate)-sc), score)
+                if bpstrand == "forward":
+                    w.write("%s\t%d\t%d\t%d\t%d\t%s\n" % (name, k, k, int(v.jcoordinate), int(v.jcoordinate), score))
+                reverse_list.append(list([name, k, k, int(v.jcoordinate), int(v.jcoordinate), score]))
+            else:
+                continue
+
+        if bpstrand == "reverse":
+            #length should be in final row, column 2
+            final_row = reverse_list[-1]
+            first_row = reverse_list[0]
+            start_coordinate = first_row[1]
+            length = final_row[1]
+            print(start_coordinate, length)
+            #Print header
+            #establish a reverse order of lines, modify, then print
+            for row in reversed(reverse_list):
+                rev0 = str(row[0])
+                rev1 = str((int(length) - int(row[1])+1)+int(start_coordinate))
+                rev2 = str((int(length) - int(row[2])+1)+int(start_coordinate))
+                rev3 = str((int(length) - int(row[3])+1)+int(start_coordinate))
+                rev4 = str((int(length) - int(row[4])+1)+int(start_coordinate))
+                rev5 = str(row[5])
+
+                # rev0 = str(row[0])
+                # rev1 = str((int(length) - int(row[1])+1))
+                # rev2 = str((int(length) - int(row[2])+1))
+                # rev3 = str((int(length) - int(row[3])+1))
+                # rev4 = str((int(length) - int(row[4])+1))
+                # rev5 = str(row[5])
+                #print(rev0+"\t"+rev1+"\t"+rev2+"\t"+rev3+"\t"+rev4+"\t"+rev5)
+                w.write(rev0+"\t"+rev1+"\t"+rev2+"\t"+rev3+"\t"+rev4+"\t"+rev5+"\n")
+
+def get_step_win(lines):
+    row1 = lines[0].split()
+    row2 = lines[1].split()
+    step_size = int(row2[0])-int(row1[0])
+    window_size = int(row1[1])-int(row1[0])
+
+    return step_size, window_size
 
 ######Function to create X number of scrambled RNAs in list #################
 def scramble(text, randomizations, type):
@@ -522,6 +570,10 @@ if __name__ == "__main__":
                         help='filter value')
     parser.add_argument('-c', type=int, default=1,
                         help='Competition')
+    parser.add_argument('-d', type=str, default = "forward",
+                        help='strand of genome (forward or reverse; default forward)')
+    parser.add_argument('-l', type=str,
+                        help='length of ScanFold-Scan input sequence')
 
     ### Required for spinoff ###
     parser.add_argument('--out1', type=str,
@@ -570,6 +622,8 @@ if __name__ == "__main__":
 
     temperature = args.temp
 
+    strand = args.d
+    #strand = "reverse"
     filename = args.input
     filter = int(args.f)
     competition = int(args.c)
@@ -617,23 +671,29 @@ if __name__ == "__main__":
         z_score_list = []
         bp_dict = {}
 
-        #Read all lines from ScanFold-Scan output file (this assumes no header)
+        #Read all lines from ScanFold-Scan file (exept header)
         lines = f.readlines()[0:]
 
         #Generate nucleotide dictionary to assign each nucleotide in sequence a key
         nuc_dict = NucleotideDictionary(lines)
+        step_size, window_size = get_step_win(lines)
         print("Sequence length: "+str(len(nuc_dict))+"nt")
         # if len(nuc_dict) > 1000:
         #     raise SystemExit('Input sequence is longer than 1000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
 
         #Determine start and end coordinate values
         start_coordinate = str(list(nuc_dict.keys())[0])
-        #print(start_coordinate)
+        print(start_coordinate)
         end_coordinate = str(list(nuc_dict.keys())[-1])
         #print(end_coordinate)
+        ### get step and window size
+        step_size, window_size = get_step_win(lines)
+        print(step_size, window_size)
+
 
         #Iterate through input file, read each rows metrics, sequence, etc.
         print("Reading sequence and structures...")
+
         for row in lines:
 
             #Ignore blank lines
@@ -1230,10 +1290,10 @@ if __name__ == "__main__":
         # os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
 
     if competition == 1:
-        write_bp(final_partners, out6, start_coordinate)
+        write_bp(final_partners, out6, start_coordinate, strand, length)
         write_wig_dict(final_partners, final_partners_wig, name)
     if competition == 0:
-        write_bp(best_bps, out6, start_coordinate)
+        write_bp(best_bps, out6, start_coordinate, strand, length)
     write_fasta(nuc_dict, out7, name)
     write_fai(nuc_dict, fasta_index_path, name)
 
@@ -1433,6 +1493,8 @@ if __name__ == "__main__":
         se.write("ScanFold predicted structures which contain at least one base pair with Zavg < -2 have been extracted from "+str(name)+" results (sequence length "+str(length)+"nt) and have been refolded using RNAfold to determine their individual MFE, structure, z-score (using 100X randomizations), and ensemble diversity score.\n")
         for i in extracted_structure_list[:]:
             frag = i.sequence
+            frag = frag.upper()
+            frag = transcribe(frag)
             # fc = RNA.fold_compound(str(frag)) #creates "Fold Compound" object
             # fc.pf() # performs partition function calculations
             # frag_q = (RNA.pf_fold(str(frag))) # calculate partition function "fold" of fragment
