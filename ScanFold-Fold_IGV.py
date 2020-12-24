@@ -430,7 +430,6 @@ def write_wig_dict(nucleotide_dictionary, outputfilename, name):
             w.write("%f\n" % (v.zscore))
 
 def write_bp(base_pair_dictionary, filename, start_coordinate, bpstrand, length):
-    bpstrand = "reverse"
     with open(filename, 'w') as w:
             #set color for bp file (igv format)
         w.write("%s\t%d\t%d\t%d\t%s\n" % (str("color:"), 55, 129, 255, str("Less than -2 "+str(minz))))
@@ -731,7 +730,7 @@ if __name__ == "__main__":
                         sequence_raw = sequence_raw.replace("-", "N")
                         structure_raw = str(data[8])
 
-                    strand = 1
+                    #strand = 1
                     #print("Tab "+icoordinate)
                 except:
                     data = row.split(',')
@@ -1316,16 +1315,16 @@ if __name__ == "__main__":
         print("Elapsed time: "+str(elapsed_time)+"s")
 
         #refold from -1 constraints
-        refolded_filter1_structure, _, refolded_filter1_MFE, _ = rna_refold(full_fasta_sequence, int(temperature), dbn_file_path2)
+        #refolded_filter1_structure, _, refolded_filter1_MFE, _ = rna_refold(full_fasta_sequence, int(temperature), dbn_file_path2)
 
         #refold from -2 constraints
         refolded_filter2_structure, _, refolded_filter2_MFE, _ = rna_refold(full_fasta_sequence, int(temperature), dbn_file_path3)
 
         #extract the structure
-        full_structure, _, full_MFE, _ = rna_fold(full_fasta_sequence, int(temperature))
+        #full_structure, _, full_MFE, _ = rna_fold(full_fasta_sequence, int(temperature))
 
-        dbn_log_file.write(">"+str(name)+"\tGlobal Full MFE="+str(full_MFE)+"\n"+str(full_fasta_sequence)+"\n"+str(full_structure)+"\n")
-        dbn_log_file.write(">"+str(name)+"\Refolded with -1 constraints MFE="+str(refolded_filter1_MFE)+"\n"+str(full_fasta_sequence)+"\n"+str(refolded_filter1_structure)+"\n")
+        #dbn_log_file.write(">"+str(name)+"\tGlobal Full MFE="+str(full_MFE)+"\n"+str(full_fasta_sequence)+"\n"+str(full_structure)+"\n")
+        #dbn_log_file.write(">"+str(name)+"\Refolded with -1 constraints MFE="+str(refolded_filter1_MFE)+"\n"+str(full_fasta_sequence)+"\n"+str(refolded_filter1_structure)+"\n")
         dbn_log_file.write(">"+str(name)+"\Refolded with -2 constraints MFE="+str(refolded_filter2_MFE)+"\n"+str(full_fasta_sequence)+"\n"+str(refolded_filter2_structure)+"\n")
         dbn_log_file.close()
         dbn_files_to_combine = [str(dbn_file_path), str(dbn_file_path1), str(dbn_file_path2), str(dbn_file_path3)]
