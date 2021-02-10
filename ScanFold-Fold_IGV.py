@@ -47,6 +47,7 @@ from functools import partial
 import random
 from io import StringIO
 import tempfile
+import subprocess
 
 from ScanFoldSharedIGV import *
 
@@ -1265,9 +1266,9 @@ if __name__ == "__main__":
         write_ct(final_partners, out3, float(-2), strand)
 
         #Create a dbn file for forna
-        os.system(str("ct2dot "+str(out1)+" 1 "+str(dbn_file_path1)))
-        os.system(str("ct2dot "+str(out2)+" 1 "+str(dbn_file_path2)))
-        os.system(str("ct2dot "+str(out3)+" 1 "+str(dbn_file_path3)))
+        subprocess.run(['ct2dot', str(out1), '1', str(dbn_file_path1)])
+        subprocess.run(['ct2dot', str(out2), '1', str(dbn_file_path2)])
+        subprocess.run(['ct2dot', str(out3), '1', str(dbn_file_path3)])
 
 
         # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
