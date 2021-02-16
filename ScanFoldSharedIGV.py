@@ -241,9 +241,15 @@ def energies(seq_list, temperature):
 
 def multiprocessing(func, args,
                     workers):
-    ctx = get_context()
-    if 'SCANFOLDMPMETHOD' in os.environ:
-        ctx = get_context(os.environ['SCANFOLDMPMETHOD'])
-    with ProcessPoolExecutor(workers, ctx) as ex:
-        res = ex.map(func, args)
+
+    if 'SCANFOLDMPUSETHREADS' in os.environ:
+        with ThreadPoolExecutor(workers) as ex:
+            res = ex.map(func, args)
+    else:
+        ctx = get_context()
+        if 'SCANFOLDMPMETHOD' in os.environ:
+            ctx = get_context(os.environ['SCANFOLDMPMETHOD'])
+        with ProcessPoolExecutor(workers, ctx) as ex:
+            res = ex.map(func, args)
+
     return list(res)
