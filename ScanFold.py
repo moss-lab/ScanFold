@@ -21,6 +21,8 @@ $ python3.6 ScanFold.py fasta_filename [options]
 # import forgi.visual.mplotlib as fvm
 # import forgi
 
+from ScanFoldSharedIGV import *
+
 import os
 import sys
 import argparse
@@ -408,7 +410,7 @@ if fold_only == False:
                             seqlist.append(frag) # adds the native fragment to list
                             scrambled_sequences = scramble(frag, randomizations, type)
                             seqlist.extend(scrambled_sequences)
-                            energy_list = energies(seqlist)
+                            energy_list = energies(seqlist, temperature, algo)
                             try:
                                 zscore = round(zscore_function(energy_list, randomizations), 2)
                             except:
@@ -490,7 +492,7 @@ if fold_only == False:
                             seqlist.append(frag) # adds the native fragment to list
                             scrambled_sequences = scramble(frag, randomizations, type)
                             seqlist.extend(scrambled_sequences)
-                            energy_list = energies(seqlist)
+                            energy_list = energies(seqlist, temperature, algo)
                             if print_random == True:
                                 print(energy_list)
                             try:
@@ -679,7 +681,7 @@ if fold_only == False:
                                 seqlist.append(frag) # adds the native fragment to list
                                 scrambled_sequences = scramble(frag, randomizations, type)
                                 seqlist.extend(scrambled_sequences)
-                                energy_list = energies(seqlist)
+                                energy_list = energies(seqlist, temperature, algo)
                                 if print_random == "on":
                                     print(energy_list)
                                 try:
@@ -1398,14 +1400,14 @@ if fold_only == False:
                 elapsed_time = str(round((time.time() - start_time), 2))+"s"
                 print("Elapsed time: "+elapsed_time)
                 print("Writing DP files, can not write CT files...")
-                write_bp(best_bps, out6+"."+outname+cur_record.name+".ALL.bp", start_coordinate)
+                write_bp(best_bps, out6+"."+outname+cur_record.name+".ALL.bp", start_coordinate, name, minz)
                 if filter != None:
-                    write_dp(best_bps, output+str(filter)+cur_record.name+".dp", filter)
-                write_dp(best_bps, out1+"."+outname+".dp", float(10))
-                write_dp(best_bps, out2+"."+outname+".dp", float(-1))
-                write_dp(best_bps, out3+"."+outname+".dp", float(-2))
-                write_dp(best_bps, output+"."+outname+"mean_"+str(round(meanz, 2))+".dp", meanz)
-                write_dp(best_bps, output+"."+outname+"below_mean_"+str(round(one_sig_below, 2))+".dp", one_sig_below)
+                    write_dp(best_bps, output+str(filter)+cur_record.name+".dp", filter, minz)
+                write_dp(best_bps, out1+"."+outname+".dp", float(10), minz)
+                write_dp(best_bps, out2+"."+outname+".dp", float(-1), minz)
+                write_dp(best_bps, out3+"."+outname+".dp", float(-2), minz)
+                write_dp(best_bps, output+"."+outname+"mean_"+str(round(meanz, 2))+".dp", meanz, minz)
+                write_dp(best_bps, output+"."+outname+"below_mean_"+str(round(one_sig_below, 2))+".dp", one_sig_below, minz)
                 print("ScanFold-Fold complete, find results in...")
 
             #Write CT files
@@ -1417,22 +1419,22 @@ if fold_only == False:
                 #print(len(final_partners))
 
                 # if filter != None or filter != -2:
-                #     (final_partners, output+str(filter)+".ct", filter, strand)
-                # write_ct(final_partners, output+"no_filter.ct", float(10), strand)
-                # write_ct(final_partners, output+"-1.ct", float(-1), strand)
-                # write_ct(final_partners, output+"-2.ct", float(-2), strand)
+                #     (final_partners, output+str(filter)+".ct", filter, strand, name)
+                # write_ct(final_partners, output+"no_filter.ct", float(10), strand, name, start_coordinate)
+                # write_ct(final_partners, output+"-1.ct", float(-1), strand, name, start_coordinate)
+                # write_ct(final_partners, output+"-2.ct", float(-2), strand, name, start_coordinate)
                 # if filter != None or filter != -2:
-                #     write_ct(final_partners, output+str(filter)+".ct", filter, strand)
+                #     write_ct(final_partners, output+str(filter)+".ct", filter, strand, name, start_coordinate)
                 strand = 1
-                write_ct(final_partners, str(dbn_file_path1)+".ct", float(10), strand)
-                write_ct(final_partners, str(dbn_file_path2)+".ct", float(-1), strand)
-                write_ct(final_partners, str(dbn_file_path3)+".ct", float(-2), strand)
+                write_ct(final_partners, str(dbn_file_path1)+".ct", float(10), strand, name, start_coordinate)
+                write_ct(final_partners, str(dbn_file_path2)+".ct", float(-1), strand, name, start_coordinate)
+                write_ct(final_partners, str(dbn_file_path3)+".ct", float(-2), strand, name, start_coordinate)
                 makedbn(dbn_file_path1, "NoFilter")
                 makedbn(dbn_file_path2, "Zavg_-1")
                 makedbn(dbn_file_path3, "Zavg_-2")
-                write_bp(final_partners, out6+"."+outname+".bp", start_coordinate)
-                write_wig_dict(final_partners, final_partners_wig+"."+outname+".wig", name)
-                write_bp(best_bps, out6+"."+outname+"."+cur_record.name+".ALL.bp", start_coordinate)
+                write_bp(final_partners, out6+"."+outname+".bp", start_coordinate, name, minz)
+                write_wig_dict(final_partners, final_partners_wig+"."+outname+".wig", name, step_size)
+                write_bp(best_bps, out6+"."+outname+"."+cur_record.name+".ALL.bp", start_coordinate, name, minz)
 
             write_fasta(nuc_dict, name+"."+outname+".fa", name)
 
@@ -1690,7 +1692,7 @@ if fold_only == False:
                 seqlist.append(frag) # adds the native fragment to list
                 scrambled_sequences = scramble(frag, 100, type)
                 seqlist.extend(scrambled_sequences)
-                energy_list = energies(seqlist)
+                energy_list = energies(seqlist, temperature, algo)
                 try:
                     zscore = round(zscore_function(energy_list, 100), 2)
                 except:
@@ -2270,14 +2272,14 @@ if fold_only == False:
 #         elapsed_time = str(round((time.time() - start_time), 2))+"s"
 #         print("Elapsed time: "+elapsed_time)
 #         print("Writing DP files, can not write CT files...")
-#         write_bp(best_bps, out6+"."+outname+".ALL.bp", start_coordinate)
+#         write_bp(best_bps, out6+"."+outname+".ALL.bp", start_coordinate, name)
 #         if filter != None:
 #             write_dp(best_bps, output+str(filter)+".dp", filter)
-#         write_dp(best_bps, out1+"."+outname+".dp", float(10))
-#         write_dp(best_bps, out2+"."+outname+".dp", float(-1))
-#         write_dp(best_bps, out3+"."+outname+".dp", float(-2))
-#         write_dp(best_bps, output+"."+outname+"mean_"+str(round(meanz, 2))+".dp", meanz)
-#         write_dp(best_bps, output+"."+outname+"below_mean_"+str(round(one_sig_below, 2))+".dp", one_sig_below)
+#         write_dp(best_bps, out1+"."+outname+".dp", float(10), minz)
+#         write_dp(best_bps, out2+"."+outname+".dp", float(-1), minz)
+#         write_dp(best_bps, out3+"."+outname+".dp", float(-2), minz)
+#         write_dp(best_bps, output+"."+outname+"mean_"+str(round(meanz, 2))+".dp", meanz, minz)
+#         write_dp(best_bps, output+"."+outname+"below_mean_"+str(round(one_sig_below, 2))+".dp", one_sig_below, minz)
 #         print("ScanFold-Fold complete, find results in...")
 #
 #     #Write CT files
@@ -2289,16 +2291,16 @@ if fold_only == False:
 #         #print(len(final_partners))
 #
 #         # if filter != None or filter != -2:
-#         #     (final_partners, output+str(filter)+".ct", filter, strand)
-#         # write_ct(final_partners, output+"no_filter.ct", float(10), strand)
-#         # write_ct(final_partners, output+"-1.ct", float(-1), strand)
-#         # write_ct(final_partners, output+"-2.ct", float(-2), strand)
+#         #     (final_partners, output+str(filter)+".ct", filter, strand, name)
+#         # write_ct(final_partners, output+"no_filter.ct", float(10), strand, name, start_coordinate)
+#         # write_ct(final_partners, output+"-1.ct", float(-1), strand, name, start_coordinate)
+#         # write_ct(final_partners, output+"-2.ct", float(-2), strand, name, start_coordinate)
 #         # if filter != None or filter != -2:
-#         #     write_ct(final_partners, output+str(filter)+".ct", filter, strand)
+#         #     write_ct(final_partners, output+str(filter)+".ct", filter, strand, name, start_coordinate)
 #         strand = 1
-#         write_ct(final_partners, str(dbn_file_path1)+".ct", float(10), strand)
-#         write_ct(final_partners, str(dbn_file_path2)+".ct", float(-1), strand)
-#         write_ct(final_partners, str(dbn_file_path3)+".ct", float(-2), strand)
+#         write_ct(final_partners, str(dbn_file_path1)+".ct", float(10), strand, name, start_coordinate)
+#         write_ct(final_partners, str(dbn_file_path2)+".ct", float(-1), strand, name, start_coordinate)
+#         write_ct(final_partners, str(dbn_file_path3)+".ct", float(-2), strand, name, start_coordinate)
 #         makedbn(dbn_file_path1, "NoFilter")
 #         makedbn(dbn_file_path2, "Zavg_-1")
 #         makedbn(dbn_file_path3, "Zavg_-2")
@@ -2306,9 +2308,9 @@ if fold_only == False:
 #         #Create a dbn file for forna
 #         #os.system(str("ct2dot "+cur_record.name+"."+str(out3)+" 1 "+cur_record.name+"."+str(dbn_file_path)))
 #
-#         # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
-#         # write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
-#         # write_ct(final_partners, output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand)
+#         # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand, name, start_coordinate)
+#         # write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand, name, start_coordinate)
+#         # write_ct(final_partners, output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand, name, start_coordinate)
 #         #
 #         # except:
 #         #     print("Couldn't pass -c option")
@@ -2326,10 +2328,10 @@ if fold_only == False:
 #     #url = str(callbackurl+"/"+str(nodeid)+"/0")
 #     #response = requests.get(url, verify=False)
 #     if competition == 1:
-#         write_bp(final_partners, out6+"."+outname+".bp", start_coordinate)
-#         write_wig_dict(final_partners, final_partners_wig+"."+outname+".wig", name)
+#         write_bp(final_partners, out6+"."+outname+".bp", start_coordinate, name, minz)
+#         write_wig_dict(final_partners, final_partners_wig+"."+outname+".wig", name, step_size)
 #     if competition == 1:
-#         write_bp(best_bps, out6+"."+outname+".ALL.bp", start_coordinate)
+#         write_bp(best_bps, out6+"."+outname+".ALL.bp", start_coordinate, name, minz)
 #     write_fasta(nuc_dict, name+"."+outname+".fa", name)
 #     #write_fai(nuc_dict, fasta_index_path, name)
 #     #print("ScanFold-Fold analysis complete! Refresh page to ensure proper loading of IGV")
@@ -2341,9 +2343,9 @@ if fold_only == False:
 #         write_wig(ED_list, step_size, name, outname+".scan-ED.wig")
 #
 #
-#         # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
-#         # write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
-#         # write_ct(final_partners, output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand)
+#         # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand, name, start_coordinate)
+#         # write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand, name, start_coordinate)
+#         # write_ct(final_partners, output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand, name, start_coordinate)
 #
 #         # except:
 #         #     print("Couldn't pass -c option")
@@ -2361,10 +2363,10 @@ if fold_only == False:
 #     url = str(callbackurl+"/"+str(nodeid)+"/0")
 #     # response = requests.get(url, verify=False)
 #     if competition == 1:
-#         write_bp(final_partners, out6+"."+outname+".bp", start_coordinate)
-#         write_wig_dict(final_partners, final_partners_wig+"."+outname+".wig", outname)
+#         write_bp(final_partners, out6+"."+outname+".bp", start_coordinate, name, minz)
+#         write_wig_dict(final_partners, final_partners_wig+"."+outname+".wig", outname, step_size)
 #     if competition == 1:
-#         write_bp(best_bps, out6+"."+outname+".ALL.bp", start_coordinate)
+#         write_bp(best_bps, out6+"."+outname+".ALL.bp", start_coordinate, name, minz)
 #     write_fasta(nuc_dict, outname+".fa", outname)
 #     print("ScanFold-Fold analysis complete! Refresh page to ensure proper loading of IGV")
 #     #create output file with all DBNs and RNAfold with constraints

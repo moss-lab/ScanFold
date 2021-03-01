@@ -1,9 +1,11 @@
 
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import subprocess
-import numpy as np
 import random
 import re
+from multiprocessing import get_context
+import os
+import statistics
 
 class NucZscore:
     #Nucleotide class; defines a nucleotide with a coordinate and a A,T,G,C,U
@@ -174,8 +176,17 @@ def makedbn(ctfile, name):
 
 def multiprocessing(func, args,
                     workers):
-    with ProcessPoolExecutor(workers) as ex:
-        res = ex.map(func, args)
+
+    if 'SCANFOLDMPUSETHREADS' in os.environ:
+        with ThreadPoolExecutor(workers) as ex:
+            res = ex.map(func, args)
+    else:
+        ctx = get_context()
+        if 'SCANFOLDMPMETHOD' in os.environ:
+            ctx = get_context(os.environ['SCANFOLDMPMETHOD'])
+        with ProcessPoolExecutor(workers, ctx) as ex:
+            res = ex.map(func, args)
+
     return list(res)
 
 #### Defining Dinucleotide function #####
@@ -508,7 +519,7 @@ def best_basepair(bp_dict, nucleotide, coordinate, type):
 
     return best_bp;
 
-def write_ct(base_pair_dictionary, filename, filter, strand):
+def write_ct(base_pair_dictionary, filename, filter, strand, name, start_coordinate):
     #Function to write connectivity table files from a list of best i-j pairs
     w = open(filename, 'w')
     w.write((str(len(base_pair_dictionary))+"\t"+name+"\n"))
@@ -595,12 +606,12 @@ def write_ct(base_pair_dictionary, filename, filter, strand):
                     raise ValueError("WriteCT function did not find a nucleotide to match coordinate (i or j coordinate does not match dictionary key_coordinateey_coordinateey)")
                 continue
 
-def write_dp(base_pair_dictionary, filename, filter):
+def write_dp(base_pair_dictionary, filename, filter, minz):
     #this function will create a dp file for IGV
     w = open(filename, 'w')
     for k, v in base_pair_dictionary.items():
         if float(v.zscore) < filter:
-            probability = (v.zscore/minz)
+            #probability = (v.zscore/minz)
             if int(v.icoordinate) < int(v.jcoordinate):
                 #w.write("%d\t%d\t%f\n" % (k, int(v.jcoordinate), float(-(math.log10(probability)))))
                 w.write("%d\t%d\t%f\n" % (v.icoordinate, int(v.jcoordinate), float(((-1/minz)*(v.zscore)))/minz))
@@ -647,7 +658,7 @@ def nuc_dict_to_seq(nucleotide_dictionary):
 
     return fasta_sequence
 
-def write_wig_dict(nucleotide_dictionary, outputfilename, name):
+def write_wig_dict(nucleotide_dictionary, outputfilename, name, step_size):
 
     w = open(outputfilename, 'w')
     #write wig file header
@@ -675,7 +686,7 @@ def write_wig(metric_list, step, name, outputfilename):
                 w.write("%s\n" % (metric))
                 #print(metric)
 
-def write_bp(base_pair_dictionary, filename, start_coordinate):
+def write_bp(base_pair_dictionary, filename, start_coordinate, name, minz):
 
     w = open(filename, 'w')
         #set color for bp file (igv format)
@@ -788,8 +799,55 @@ def flip_structure(structure):
     #Function to reverse structure in a given window, for negative strand genes
     flip = {'(':')',  ')':'(',  '.':'.',  '&':'&'}
     return ''.join([flip[pair] for pair in structure[::-1]])
+    args = ["RNAfold", "-p", "-T", str(temperature)]
+    fc = subprocess.run(args, input=str(frag), check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out = str(fc.stdout)
+    test = out.splitlines()
+    structure = test[1].split()[0]
+    centroid = test[3].split()[0]
+    MFE = test[1].split(" ", 1)[1]
+    try:
+        MFE = float(re.sub('[()]', '', MFE))
+    except:
+        print("Error parsing MFE values", test)
+    ED = float(test[4].split()[-1])
 
-def rna_folder(frag):
+    return (structure, centroid, MFE, ED)
+
+def rna_fold(frag, temperature):
+    args = ["RNAfold", "-p", "-T", str(temperature)]
+    fc = subprocess.run(args, input=str(frag), check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out = str(fc.stdout)
+    test = out.splitlines()
+    structure = test[1].split()[0]
+    centroid = test[3].split()[0]
+    MFE = test[1].split(" ", 1)[1]
+    try:
+        MFE = float(re.sub('[()]', '', MFE))
+    except:
+        print("Error parsing MFE values", test)
+    ED = float(test[4].split()[-1])
+
+    return (structure, centroid, MFE, ED)
+
+def rna_refold(frag, temperature, constraint_file):
+    args = ["RNAfold", "-p", "-T", str(temperature), '-C', constraint_file]
+    fc = subprocess.run(args, input=frag, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out = str(fc.stdout)
+    test = out.splitlines()
+    structure = test[2].split()[0]
+    centroid = test[4].split()[0]
+    MFE = test[2].split(" ", 1)[1]
+    try:
+        MFE = float(re.sub('[()]', '', MFE))
+    except:
+        print("Error parsing MFE values", test)
+    ED = float(test[5].split()[-1])
+
+    return (structure, centroid, MFE, ED)
+
+def rna_folder(arg):
+    (frag, temperature, algo) = arg
     if algo == "rnastructure":
         p = RNAstructure.RNA.fromString(str(frag))
         p.FoldSingleStrand(mfeonly=True)
@@ -797,10 +855,11 @@ def rna_folder(frag):
         #(structure, MFE) = RNA.fold(str(frag))
 
     if algo == "rnafold":
-        fc = RNA.fold_compound(str(frag), md)
-        (structure, MFE) = fc.mfe()
-        #print(md.temperature)
+        _, _, MFE, _ = rna_fold(frag, temperature)
+        return MFE
     return MFE;
+
+
 
 # def rna_cofolder(frag1, frag2):
 #     frag1 = str(frag1)
@@ -814,10 +873,10 @@ def randomizer(frag):
     return result;
 
 ###### Function to calculate MFEs using RNAfold #################
-def energies(seq_list):
+def energies(seq_list, temperature, algo):
     energy_list = []
 
-    energy_list = multiprocessing(rna_folder, [sequence for sequence in seq_list], 12)
+    energy_list = multiprocessing(rna_folder, [(sequence, temperature, algo) for sequence in seq_list], 12)
     # for sequence in seq_list:
     #     #fc = RNA.fold_compound(str(sequence))
     #     (structure, MFE) = RNA.fold(str(sequence)) # calculate and define variables for mfe and structure
