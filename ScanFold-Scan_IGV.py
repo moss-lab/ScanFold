@@ -267,8 +267,8 @@ if __name__ == "__main__":
         raise SystemExit('Input sequence is longer than 40000 nt; in order to scan longer sequences consider using the stand alone programs (avaiable here: https://github.com/moss-lab/ScanFold)')
 
     ### Need to calculate reverse strand start coordinate (flipping output)
-    print("Remove LINES about REVERSE STRAND")
-    strand = "reverse"
+    # print("Remove LINES about REVERSE STRAND")
+    # strand = "reverse"
     if strand == "reverse":
         seqend = input_start_coordinate + length-1
         remainder = length-(number_windows*step_size)
