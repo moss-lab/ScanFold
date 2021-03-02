@@ -47,6 +47,7 @@ from functools import partial
 import random
 from io import StringIO
 import tempfile
+import subprocess
 
 from ScanFoldSharedIGV import *
 
@@ -672,7 +673,7 @@ if __name__ == "__main__":
 
         #Read all lines from ScanFold-Scan file (exept header)
         lines = f.readlines()[0:]
-
+        #print(lines)
         #Generate nucleotide dictionary to assign each nucleotide in sequence a key
         nuc_dict = NucleotideDictionary(lines)
         step_size, window_size = get_step_win(lines)
@@ -682,12 +683,12 @@ if __name__ == "__main__":
 
         #Determine start and end coordinate values
         start_coordinate = str(list(nuc_dict.keys())[0])
-        print(start_coordinate)
+        #print(start_coordinate)
         end_coordinate = str(list(nuc_dict.keys())[-1])
         #print(end_coordinate)
         ### get step and window size
         step_size, window_size = get_step_win(lines)
-        print(step_size, window_size)
+        #print(step_size, window_size)
 
 
         #Iterate through input file, read each rows metrics, sequence, etc.
@@ -1265,9 +1266,9 @@ if __name__ == "__main__":
         write_ct(final_partners, out3, float(-2), strand)
 
         #Create a dbn file for forna
-        os.system(str("ct2dot "+str(out1)+" 1 "+str(dbn_file_path1)))
-        os.system(str("ct2dot "+str(out2)+" 1 "+str(dbn_file_path2)))
-        os.system(str("ct2dot "+str(out3)+" 1 "+str(dbn_file_path3)))
+        subprocess.run(['ct2dot', str(out1), '1', str(dbn_file_path1)])
+        subprocess.run(['ct2dot', str(out2), '1', str(dbn_file_path2)])
+        subprocess.run(['ct2dot', str(out3), '1', str(dbn_file_path3)])
 
 
         # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
