@@ -4,6 +4,8 @@ import subprocess
 import numpy as np
 import random
 import re
+from multiprocessing import get_context
+import os
 
 #### Defining Dinucleotide function #####
 # Taken from
@@ -239,6 +241,15 @@ def energies(seq_list, temperature):
 
 def multiprocessing(func, args,
                     workers):
-    with ProcessPoolExecutor(workers) as ex:
-        res = ex.map(func, args)
+
+    if 'SCANFOLDMPUSETHREADS' in os.environ:
+        with ThreadPoolExecutor(workers) as ex:
+            res = ex.map(func, args)
+    else:
+        ctx = get_context()
+        if 'SCANFOLDMPMETHOD' in os.environ:
+            ctx = get_context(os.environ['SCANFOLDMPMETHOD'])
+        with ProcessPoolExecutor(workers, ctx) as ex:
+            res = ex.map(func, args)
+
     return list(res)
