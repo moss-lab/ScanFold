@@ -479,7 +479,8 @@ def write_bp(base_pair_dictionary, filename, start_coordinate, bpstrand, length)
             score = str(score)
 
             # ensure coordinates to start at 1 to match with converted fasta file
-            sc = int(int(start_coordinate)-1)
+            # if bpstrand == "forward":
+                # sc = int(int(start_coordinate)-1)
             #print(length)
 
             if int(v.icoordinate) < int(v.jcoordinate):
@@ -510,7 +511,8 @@ def write_bp(base_pair_dictionary, filename, start_coordinate, bpstrand, length)
             #length should be in final row, column 2
             final_row = reverse_list[-1]
             first_row = reverse_list[0]
-            start_coordinate = first_row[1]
+            ### correcting an off by one error here
+            start_coordinate = first_row[1]-1
             length = final_row[1]
             print(start_coordinate, length)
             #Print header
