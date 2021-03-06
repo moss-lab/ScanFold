@@ -416,7 +416,7 @@ def write_fasta(nucleotide_dictionary, outputfilename, name):
     w.write(">"+name+"\n")
     w.write(str(fasta_sequence))
 
-def write_wig_dict(nucleotide_dictionary, outputfilename, name):
+def write_wig_dict(nucleotide_dictionary, outputfilename, name, strand):
 
     w = open(outputfilename, 'w')
     #write wig file header
@@ -512,7 +512,7 @@ def write_bp(base_pair_dictionary, filename, start_coordinate, bpstrand, length)
             final_row = reverse_list[-1]
             first_row = reverse_list[0]
             ### correcting an off by one error here
-            start_coordinate = first_row[1]-1
+            start_coordinate = first_row[1]
             length = final_row[1]
             print(start_coordinate, length)
             #Print header
@@ -1293,7 +1293,7 @@ if __name__ == "__main__":
 
     if competition == 1:
         write_bp(final_partners, out6, start_coordinate, strand, length)
-        write_wig_dict(final_partners, final_partners_wig, name)
+        write_wig_dict(final_partners, final_partners_wig, name, strand)
     if competition == 0:
         write_bp(best_bps, out6, start_coordinate, strand, length)
     write_fasta(nuc_dict, out7, name)
