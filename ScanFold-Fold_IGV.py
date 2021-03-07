@@ -1268,28 +1268,13 @@ if __name__ == "__main__":
         write_ct(final_partners, out3, float(-2), strand)
 
         #Create a dbn file for forna
-        subprocess.run(['ct2dot', str(out1), '1', str(dbn_file_path1)])
-        subprocess.run(['ct2dot', str(out2), '1', str(dbn_file_path2)])
-        subprocess.run(['ct2dot', str(out3), '1', str(dbn_file_path3)])
+        makedbn(dbn_file_path1, "NoFilter")
+        makedbn(dbn_file_path2, "Zavg_-1")
+        makedbn(dbn_file_path3, "Zavg_-2")
+        # subprocess.run(['ct2dot', str(out1), '1', str(dbn_file_path1)])
+        # subprocess.run(['ct2dot', str(out2), '1', str(dbn_file_path2)])
+        # subprocess.run(['ct2dot', str(out3), '1', str(dbn_file_path3)])
 
-
-        # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
-        # write_ct(final_partners, output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct", one_sig_below, strand)
-        # write_ct(final_partners, output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct", two_sig_below, strand)
-
-        # except:
-        #     print("Couldn't pass -c option")
-        #     pass
-        #Write DBN files from CT files
-        # elapsed_time = str(round((time.time() - start_time), 2))+"s"
-        # print("Elapsed time: "+elapsed_time)
-        # os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
-        # os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
-        # if filter != None:
-        #     os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
-        # os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
-        # os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
-        # os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
 
     if competition == 1:
         write_bp(final_partners, out6, start_coordinate, strand, length)

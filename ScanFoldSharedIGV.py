@@ -253,3 +253,76 @@ def multiprocessing(func, args,
             res = ex.map(func, args)
 
     return list(res)
+
+def makedbn(ctfile, name):
+    icoord = ()
+    jcoord = ()
+    kcoord = ()
+    lcoord = ()
+    ctfullname = ctfile+".ct"
+    dbnfullname = ctfile+".dbn"
+    sequence = ""
+    with open(ctfullname,'r') as ct1:
+        dot = ""
+        data = ct1.readlines()[1:]
+        for line in data:
+            rows = line.split()
+            icoord = int(rows[0])
+            jcoord = int(rows[-2])
+            if len(rows[1]) > 1:
+                print("skipping header")
+                continue
+
+            elif int(rows[-2]) == 0:
+                dot += '.'
+                sequence += rows[1]
+            else:
+                sequence += rows[1]
+                if icoord < jcoord:
+                    with open(ctfullname,'r') as ct2:
+                        data = ct2.readlines()
+                        for line in data[icoord:]:
+                            rows = line.split()
+                            kcoord = int(rows[0])
+                            lcoord = int(rows[-2])
+
+                            if kcoord == jcoord:
+                                #print(kcoord, icoord, "(")
+                                dot += '('
+                                break
+                            else:
+                                if lcoord == 0:
+                                    pass
+                                elif lcoord < icoord:
+                                    print('Non-nested pair found: '+str(lcoord)+' to '+str(kcoord))
+                                    dot += '<'
+                                    break
+                                else:
+                                    pass
+                elif icoord > jcoord:
+                    with open(ctfullname,'r') as ct2:
+                        data = ct2.readlines()
+                        for line in data[jcoord:]:
+                            rows = line.split()
+                            kcoord = int(rows[0])
+                            lcoord = int(rows[-2])
+                            if kcoord == icoord:
+                                #print(kcoord, icoord, ")")
+                                dot += ')'
+                                break
+                            else:
+                                if lcoord == 0:
+                                    pass
+                                elif lcoord < jcoord:
+                                    dot += '>'
+                                    break
+                                else:
+                                    pass
+                else:
+                    print('Error in non-nested pair search'+'\n'+'i = '+str(icoord)+'\n'+'j = '+str(jcoord)+'\n'+'k = '+str(kcoord)+'\n'+'l = '+str(lcoord))
+    #print(sequence)
+    #print(dot)
+    with open(dbnfullname,'w') as dbn:
+        dbn.writelines(f">{name}\n")
+        dbn.writelines(f"{sequence}\n")
+        dbn.writelines(f"{dot}\n")
