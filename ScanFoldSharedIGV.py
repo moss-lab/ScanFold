@@ -259,10 +259,9 @@ def makedbn(ctfile, name, dbnfullname):
     jcoord = ()
     kcoord = ()
     lcoord = ()
-    ctfullname = ctfile+".ct"
     #dbnfullname = ctfile+".dbn"
     sequence = ""
-    with open(ctfullname,'r') as ct1:
+    with open(ctfile,'r') as ct1:
         dot = ""
         data = ct1.readlines()[1:]
         for line in data:
@@ -300,7 +299,7 @@ def makedbn(ctfile, name, dbnfullname):
                                 else:
                                     pass
                 elif icoord > jcoord:
-                    with open(ctfullname,'r') as ct2:
+                    with open(ctfile,'r') as ct2:
                         data = ct2.readlines()
                         for line in data[jcoord:]:
                             rows = line.split()
