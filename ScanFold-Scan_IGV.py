@@ -57,7 +57,7 @@ def scramble(text, randomizations, type):
             result = dinuclShuffle(frag)
             frag_seqs.append(result)
     elif type == "mono":
-        frag_seqs = multiprocessing(randomizer, [frag for i in range(randomizations)], 12)
+        frag_seqs = multiprocessing(randomizer, [frag for i in range(randomizations)], 4)
 
         # for _ in range(int(randomizations)):
         #     result = ''.join(random.sample(frag,len(frag)))

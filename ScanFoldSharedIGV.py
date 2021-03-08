@@ -231,7 +231,7 @@ def rna_folder(arg):
 def energies(seq_list, temperature):
     energy_list = []
 
-    energy_list = multiprocessing(rna_folder, [(sequence, temperature) for sequence in seq_list], 12)
+    energy_list = multiprocessing(rna_folder, [(sequence, temperature) for sequence in seq_list], 4)
     # for sequence in seq_list:
     #     #fc = RNA.fold_compound(str(sequence))
     #     (structure, MFE) = RNA.fold(str(sequence)) # calculate and define variables for mfe and structure
