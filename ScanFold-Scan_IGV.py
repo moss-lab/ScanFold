@@ -270,13 +270,13 @@ if __name__ == "__main__":
     # print("Remove LINES about REVERSE STRAND")
     # strand = "reverse"
     if strand == "reverse":
-        seqend = input_start_coordinate + length-1
+        seqend = input_start_coordinate + (length-1)
         remainder = length-(number_windows*step_size)
         revstart = seqend - ((number_windows)*(step_size))
-        print(f"Reverse Strand. Nucleotide remainders={remainder}  Sequence end={seqend} Reverse start={revstart}")
+        #print(f"Reverse Strand. Nucleotide remainders={remainder}  Sequence end={seqend} Reverse start={revstart}")
     else:
         remainder = length-(number_windows*step_size)
-        seqend = input_start_coordinate + length
+        seqend = input_start_coordinate + (length-1)
 
     # ### Add headers for bigwig files
     # """ Headers need to have the name and length of fasta sequence
@@ -304,7 +304,7 @@ if __name__ == "__main__":
         #print(frag)
         #print(str(len(frag)))
         start_nucleotide = i + input_start_coordinate
-        end_nucleotide = start_nucleotide + window_size
+        end_nucleotide = start_nucleotide + window_size-1
         if -1 == 0:
             print("Magic")
         # if 'N' in frag:
@@ -368,70 +368,75 @@ if __name__ == "__main__":
     ### Add a final window if the full sequence was not covered ###
     #print("ELSE", remainder, seqend)
     #print(str(int(seqend+1)-window_size), str(seqend))
-    if remainder > 0:
-        #print(i)
-        # pbar.update(i)
+### scan a final window no matter what:
+    if strand == "forward":
         start_nucleotide = str((seqend)-window_size)
-        end_nucleotide = str(seqend)
-        frag = seq[(int(length))-window_size:int(length)] # This breaks up sequence into fragments
-        #print(frag)
-        #print(str(len(frag)))
-        if -1 == 0:
-            print("Magic")
-        # if 'N' in frag:
-        #     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str(frag)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\n")
-        #     i += step_size #this ensures that the next iteration increases by "step size" length
+        end_nucleotide = str(seqend-1)
+        frag = seq[(int(length-1))-window_size:int(length-1)] # This breaks up sequence into fragments
+
+    if strand == "reverse":
+        start_nucleotide = str((seqend)-window_size)
+        end_nucleotide = str(seqend-1)
+        frag = seq[(int(length-1))-window_size:int(length-1)] # This breaks up sequence into fragments
+
+    #print(frag)
+    #print(str(len(frag)))
+    if -1 == 0:
+        print("Magic")
+    # if 'N' in frag:
+    #     w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\t"+str(frag)+"\t"+str("Not Available - N in fragment")+"\t"+str("Not Available - N in fragment")+"\n")
+    #     i += step_size #this ensures that the next iteration increases by "step size" length
+    else:
+        #print(start_nucleotide)
+        #print(end_nucleotide)
+        if do_upper_transcribe:
+            frag = frag.upper()
+            frag = frag.transcribe()
+        if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
+            MFE = int(0.0)
+            zscore = "00.00"
+            ED = int(0.0)
+            pscore = int(0.0)
+            structure = "........................................................................................................................"
+            centroid = "........................................................................................................................"
         else:
-            #print(start_nucleotide)
-            #print(end_nucleotide)
-            if do_upper_transcribe:
-                frag = frag.upper()
-                frag = frag.transcribe()
-            if frag == "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN":
-                MFE = int(0.0)
-                zscore = "00.00"
-                ED = int(0.0)
-                pscore = int(0.0)
-                structure = "........................................................................................................................"
-                centroid = "........................................................................................................................"
-            else:
-                #print(frag)
-                structure, centroid, MFE, ED = rna_fold(frag, temperature)
+            #print(frag)
+            structure, centroid, MFE, ED = rna_fold(frag, temperature)
 
-                MFE_total.append(float(MFE))
-                ED_total.append(float(ED))
-                seqlist = [] # creates the list we will be filling with sequence fragments
-                seqlist.append(frag) # adds the native fragment to list
-                scrambled_sequences = scramble(frag, randomizations, type)
-                seqlist.extend(scrambled_sequences)
-                energy_list = energies(seqlist, temperature)
-                if print_random == "on":
-                    print(energy_list)
-                try:
-                    zscore = round(zscore_function(energy_list, randomizations), 2)
-                except:
-                    zscore = zscore_function(energy_list, randomizations)
-                zscore_total.append(zscore)
+            MFE_total.append(float(MFE))
+            ED_total.append(float(ED))
+            seqlist = [] # creates the list we will be filling with sequence fragments
+            seqlist.append(frag) # adds the native fragment to list
+            scrambled_sequences = scramble(frag, randomizations, type)
+            seqlist.extend(scrambled_sequences)
+            energy_list = energies(seqlist, temperature)
+            if print_random == "on":
+                print(energy_list)
+            try:
+                zscore = round(zscore_function(energy_list, randomizations), 2)
+            except:
+                zscore = zscore_function(energy_list, randomizations)
+            zscore_total.append(zscore)
 
-                #print(zscore)
-                pscore = round(pscore_function(energy_list, randomizations), 2)
-                #print(pscore)
-                pscore_total.append(pscore)
+            #print(zscore)
+            pscore = round(pscore_function(energy_list, randomizations), 2)
+            #print(pscore)
+            pscore_total.append(pscore)
 
 ### Append metrics to list ###
-                MFE_list.append(MFE)
-                zscore_list.append(zscore)
-                pscore_list.append(pscore)
-                ED_list.append(ED)
+            MFE_list.append(MFE)
+            zscore_list.append(zscore)
+            pscore_list.append(pscore)
+            ED_list.append(ED)
 
-            if print_to_screen == 'on':
-                print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
-            w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
-            #gff3file.write()
-            #pscore_wig.write()
-            #zscore_wig.write()
-            #ED_wig.write()
-            #MFE_wig.write()
+        if print_to_screen == 'on':
+            print(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+        w.write(str(start_nucleotide)+"\t"+str(end_nucleotide)+"\t"+str(temperature)+"\t"+str(MFE)+"\t"+str(zscore)+"\t"+str(pscore)+"\t"+str(ED)+"\t"+str(frag)+"\t"+str(structure)+"\t"+str(centroid)+"\n")
+        #gff3file.write()
+        #pscore_wig.write()
+        #zscore_wig.write()
+        #ED_wig.write()
+        #MFE_wig.write()
 
 
     for z in zscore_total:
