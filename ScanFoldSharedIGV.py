@@ -278,7 +278,7 @@ def makedbn(ctfile, name, dbnfullname):
             else:
                 sequence += rows[1]
                 if icoord < jcoord:
-                    with open(ctfullname,'r') as ct2:
+                    with open(ctfile,'r') as ct2:
                         data = ct2.readlines()
                         for line in data[icoord:]:
                             rows = line.split()
