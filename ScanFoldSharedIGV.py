@@ -254,13 +254,13 @@ def multiprocessing(func, args,
 
     return list(res)
 
-def makedbn(ctfile, name):
+def makedbn(ctfile, name, dbnfullname):
     icoord = ()
     jcoord = ()
     kcoord = ()
     lcoord = ()
     ctfullname = ctfile+".ct"
-    dbnfullname = ctfile+".dbn"
+    #dbnfullname = ctfile+".dbn"
     sequence = ""
     with open(ctfullname,'r') as ct1:
         dot = ""

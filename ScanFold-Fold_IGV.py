@@ -1268,9 +1268,9 @@ if __name__ == "__main__":
         write_ct(final_partners, out3, float(-2), strand)
 
         #Create a dbn file for forna
-        makedbn(dbn_file_path1, "NoFilter")
-        makedbn(dbn_file_path2, "Zavg_-1")
-        makedbn(dbn_file_path3, "Zavg_-2")
+        makedbn(out1, "NoFilter", dbn_file_path1)
+        makedbn(out2, "Zavg_-1", dbn_file_path2)
+        makedbn(out3, "Zavg_-2", dbn_file_path3)
         # subprocess.run(['ct2dot', str(out1), '1', str(dbn_file_path1)])
         # subprocess.run(['ct2dot', str(out2), '1', str(dbn_file_path2)])
         # subprocess.run(['ct2dot', str(out3), '1', str(dbn_file_path3)])
