@@ -370,14 +370,14 @@ if __name__ == "__main__":
     #print(str(int(seqend+1)-window_size), str(seqend))
 ### scan a final window no matter what:
     if strand == "forward":
-        start_nucleotide = str((seqend)-window_size)
-        end_nucleotide = str(seqend-1)
-        frag = seq[(int(length-1))-window_size:int(length-1)] # This breaks up sequence into fragments
+        start_nucleotide = str((seqend+1)-window_size)
+        end_nucleotide = str(seqend)
+        frag = seq[(int(length))-window_size:int(length)] # This breaks up sequence into fragments
 
     if strand == "reverse":
-        start_nucleotide = str((seqend)-window_size)
-        end_nucleotide = str(seqend-1)
-        frag = seq[(int(length-1))-window_size:int(length-1)] # This breaks up sequence into fragments
+        start_nucleotide = str((seqend+1)-window_size)
+        end_nucleotide = str(seqend)
+        frag = seq[(int(length))-window_size:int(length)] # This breaks up sequence into fragments
 
     #print(frag)
     #print(str(len(frag)))
