@@ -424,7 +424,7 @@ def write_wig_dict(nucleotide_dictionary, outputfilename, name, strand):
 
     #write values of zscores
     if strand == "reverse":
-        for k, v, in sorted(nucleotide_dictionary, reverse=True):
+        for k, v, in sorted(nucleotide_dictionary.items(), reverse=True):
             w.write("%f\n" % (v.zscore))
     else:
         for k, v in nucleotide_dictionary.items():
