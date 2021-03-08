@@ -512,7 +512,7 @@ def write_bp(base_pair_dictionary, filename, start_coordinate, bpstrand, length)
             final_row = reverse_list[-1]
             first_row = reverse_list[0]
             ### correcting an off by one error here
-            start_coordinate = first_row[1]
+            start_coordinate = first_row[1]-1
             length = final_row[1]
             #print(start_coordinate, length)
             #Print header
