@@ -317,9 +317,9 @@ def NucleotideDictionary (lines):
                 #print(strand)
                 icoordinate = data[0]
                 if "A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u" in str(data[8]):
-                    sequence_raw = transcribe(str(data[8]))
+                    sequence_raw = simple_transcribe(str(data[8]))
                 elif "A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u" in str(data[7]):
-                    sequence_raw = transcribe(str(data[7]))
+                    sequence_raw = simple_transcribe(str(data[7]))
                 else:
                     raise("Could not find sequence for window")
 
@@ -754,37 +754,6 @@ def flip_structure(structure):
     flip = {'(':')',  ')':'(',  '.':'.',  '&':'&'}
     return ''.join([flip[pair] for pair in structure[::-1]])
 
-def rna_fold(frag, temperature):
-    try:
-        if algo == "rnastructure":
-            p = RNAstructure.RNA.fromString(str(frag))
-            p.FoldSingleStrand(mfeonly=True)
-            MFE = p.GetFreeEnergy(1)
-            #(structure, MFE) = RNA.fold(str(frag))
-
-        if algo == "rnafold":
-            fc = RNA.fold_compound(str(frag), md)
-            (structure, MFE) = fc.mfe()
-            #print(md.temperature)
-        return MFE;
-
-    except:
-
-        args = ["RNAfold", "-p", "-T", str(temperature)]
-        fc = subprocess.run(args, input=str(frag), check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out = str(fc.stdout)
-        test = out.splitlines()
-        structure = test[1].split()[0]
-        centroid = test[3].split()[0]
-        MFE = test[1].split(" ", 1)[1]
-        try:
-            MFE = float(re.sub('[()]', '', MFE))
-        except:
-            print("Error parsing MFE values", test)
-        ED = float(test[4].split()[-1])
-
-        return (structure, centroid, MFE, ED)
-
 def rna_refold(frag, temperature, constraint_file):
     args = ["RNAfold", "-p", "-T", str(temperature), '-C', constraint_file]
     fc = subprocess.run(args, input=frag, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -805,11 +774,12 @@ def rna_folder(arg):
     (frag, temperature, algo) = arg
     md = RNA.md()
     md.temperature = int(temperature)
-    if algo == "rnastructure":
-        p = RNAstructure.RNA.fromString(str(frag))
-        p.FoldSingleStrand(mfeonly=True)
-        MFE = p.GetFreeEnergy(1)
-        #(structure, MFE) = RNA.fold(str(frag))
+    ### Not functioning currently
+    # if algo == "rnastructure":
+    #     p = RNAstructure.RNA.fromString(str(frag))
+    #     p.FoldSingleStrand(mfeonly=True)
+    #     MFE = p.GetFreeEnergy(1)
+    #     #(structure, MFE) = RNA.fold(str(frag))
 
     if algo == "rnafold":
         fc = RNA.fold_compound(str(frag), md)
