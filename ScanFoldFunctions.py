@@ -317,9 +317,9 @@ def NucleotideDictionary (lines):
                 #print(strand)
                 icoordinate = data[0]
                 if "A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u" in str(data[8]):
-                    sequence_raw = transcribe(str(data[8]))
+                    sequence_raw = simple_transcribe(str(data[8]))
                 elif "A" or "G" or "C" or "T" or "U" or "a" or "g" or "c" or "t" or "u" in str(data[7]):
-                    sequence_raw = transcribe(str(data[7]))
+                    sequence_raw = simple_transcribe(str(data[7]))
                 else:
                     raise("Could not find sequence for window")
 
@@ -518,6 +518,7 @@ def write_ct(base_pair_dictionary, filename, filter, strand, name, start_coordin
                 continue
 
     if strand == -1:
+        end_coordinate = len(base_pair_dictionary)
         for k, v in sorted(base_pair_dictionary.items(), key=lambda x:x[0], reverse = True):
             # print(start_coordinate)
             # print(end_coordinate)
@@ -754,37 +755,6 @@ def flip_structure(structure):
     flip = {'(':')',  ')':'(',  '.':'.',  '&':'&'}
     return ''.join([flip[pair] for pair in structure[::-1]])
 
-def rna_fold(frag, temperature):
-    try:
-        if algo == "rnastructure":
-            p = RNAstructure.RNA.fromString(str(frag))
-            p.FoldSingleStrand(mfeonly=True)
-            MFE = p.GetFreeEnergy(1)
-            #(structure, MFE) = RNA.fold(str(frag))
-
-        if algo == "rnafold":
-            fc = RNA.fold_compound(str(frag), md)
-            (structure, MFE) = fc.mfe()
-            #print(md.temperature)
-        return MFE;
-
-    except:
-
-        args = ["RNAfold", "-p", "-T", str(temperature)]
-        fc = subprocess.run(args, input=str(frag), check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out = str(fc.stdout)
-        test = out.splitlines()
-        structure = test[1].split()[0]
-        centroid = test[3].split()[0]
-        MFE = test[1].split(" ", 1)[1]
-        try:
-            MFE = float(re.sub('[()]', '', MFE))
-        except:
-            print("Error parsing MFE values", test)
-        ED = float(test[4].split()[-1])
-
-        return (structure, centroid, MFE, ED)
-
 def rna_refold(frag, temperature, constraint_file):
     args = ["RNAfold", "-p", "-T", str(temperature), '-C', constraint_file]
     fc = subprocess.run(args, input=frag, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -801,30 +771,6 @@ def rna_refold(frag, temperature, constraint_file):
 
     return (structure, centroid, MFE, ED)
 
-def rna_folder(arg):
-    (frag, temperature, algo) = arg
-    md = RNA.md()
-    md.temperature = int(temperature)
-    if algo == "rnastructure":
-        p = RNAstructure.RNA.fromString(str(frag))
-        p.FoldSingleStrand(mfeonly=True)
-        MFE = p.GetFreeEnergy(1)
-        #(structure, MFE) = RNA.fold(str(frag))
-
-    if algo == "rnafold":
-        fc = RNA.fold_compound(str(frag), md)
-        (structure, MFE) = fc.mfe()
-
-    return MFE;
-
-
-
-# def rna_cofolder(frag1, frag2):
-#     frag1 = str(frag1)
-#     frag2 = str(frag2)
-#     (structure, energy) = RNA.duplex(frag1, frag2)
-#     #print(md.temperature)
-#     return energy;
 
 def randomizer(frag):
     result = ''.join(random.sample(frag,len(frag)))
@@ -1088,27 +1034,6 @@ def get_au_ratio(frag):
       au_ratio = 0
 
     return au_ratio
-
-def get_svm_zscore(frag):
-    frag = str(frag)
-    fc = RNA.fold_compound(frag)
-    (structure, mfe) = fc.mfe()
-    gc_content = get_gc_content(frag)
-    cg_ratio = get_cg_ratio(frag)
-    au_ratio = get_au_ratio(frag)
-    length = len(frag)
-    #node_mono = {1:gc_content, 2:cg_ratio, 3:au_ratio, 4:length}
-    node_mono = ((1, gc_content), (2, cg_ratio), (3, au_ratio), (4, length))
-    y_node_mono = ((1, gc_content), (2, cg_ratio), (3, au_ratio), (4, length))
-    print(type(node_mono))
-    avg_m = svm_load_model('/Users/ryanandrews/Desktop/scripts/RNAz/models/mfe_avg.model')
-    avg = svm_predict(node_mono, node_mono, avg_m)
-    stdv_m = svm_load_model('/Users/ryanandrews/Desktop/scripts/RNAz/models/mfe_stdv.model')
-    stdv = svm_predict(node_mono, node_mono, stdv_m)
-    print(mfe, avg, stdv)
-    svm_zscore = mfe-avg/stdv
-
-    return svm_zscore
 
 def get_di_freqs(frag):
     ### code taken from https://pythonforbiologists.com/dictionaries
