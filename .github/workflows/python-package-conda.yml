@@ -24,7 +24,6 @@ jobs:
         # ViennaRNA modules do not work on Windows
         conda install -c conda-forge biopython
         conda install -c bioconda viennarna
-        conda env create -f environment.yml
     - name: Lint with flake8
       run: |
         conda install flake8
