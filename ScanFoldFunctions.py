@@ -771,7 +771,6 @@ def rna_refold(frag, temperature, constraint_file):
 
     return (structure, centroid, MFE, ED)
 
-<<<<<<< HEAD
 def rna_folder(arg):
     (frag, temperature, algo) = arg
     md = RNA.md()
@@ -797,8 +796,6 @@ def rna_folder(arg):
 #     (structure, energy) = RNA.duplex(frag1, frag2)
 #     #print(md.temperature)
 #     return energy;
-=======
->>>>>>> 59bba8c958233412b258c96ffd04630534fcbc76
 
 def randomizer(frag):
     result = ''.join(random.sample(frag,len(frag)))
