@@ -518,6 +518,7 @@ def write_ct(base_pair_dictionary, filename, filter, strand, name, start_coordin
                 continue
 
     if strand == -1:
+        end_coordinate = len(base_pair_dictionary)
         for k, v in sorted(base_pair_dictionary.items(), key=lambda x:x[0], reverse = True):
             # print(start_coordinate)
             # print(end_coordinate)
@@ -770,6 +771,7 @@ def rna_refold(frag, temperature, constraint_file):
 
     return (structure, centroid, MFE, ED)
 
+<<<<<<< HEAD
 def rna_folder(arg):
     (frag, temperature, algo) = arg
     md = RNA.md()
@@ -795,6 +797,8 @@ def rna_folder(arg):
 #     (structure, energy) = RNA.duplex(frag1, frag2)
 #     #print(md.temperature)
 #     return energy;
+=======
+>>>>>>> 59bba8c958233412b258c96ffd04630534fcbc76
 
 def randomizer(frag):
     result = ''.join(random.sample(frag,len(frag)))
@@ -1058,27 +1062,6 @@ def get_au_ratio(frag):
       au_ratio = 0
 
     return au_ratio
-
-def get_svm_zscore(frag):
-    frag = str(frag)
-    fc = RNA.fold_compound(frag)
-    (structure, mfe) = fc.mfe()
-    gc_content = get_gc_content(frag)
-    cg_ratio = get_cg_ratio(frag)
-    au_ratio = get_au_ratio(frag)
-    length = len(frag)
-    #node_mono = {1:gc_content, 2:cg_ratio, 3:au_ratio, 4:length}
-    node_mono = ((1, gc_content), (2, cg_ratio), (3, au_ratio), (4, length))
-    y_node_mono = ((1, gc_content), (2, cg_ratio), (3, au_ratio), (4, length))
-    print(type(node_mono))
-    avg_m = svm_load_model('/Users/ryanandrews/Desktop/scripts/RNAz/models/mfe_avg.model')
-    avg = svm_predict(node_mono, node_mono, avg_m)
-    stdv_m = svm_load_model('/Users/ryanandrews/Desktop/scripts/RNAz/models/mfe_stdv.model')
-    stdv = svm_predict(node_mono, node_mono, stdv_m)
-    print(mfe, avg, stdv)
-    svm_zscore = mfe-avg/stdv
-
-    return svm_zscore
 
 def get_di_freqs(frag):
     ### code taken from https://pythonforbiologists.com/dictionaries
