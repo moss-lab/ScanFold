@@ -389,6 +389,7 @@ with open(myfasta, 'r') as forward_fasta:
 
         w = open(outname+".out", 'w')
         if lri == True:
+            print("WARNING! Using experimental LRI fuction. This has not been extensively tested, you may experience errors.")
             lri_file = open(outname+".LRI.out", 'w')
 
         for nuc in seq:
