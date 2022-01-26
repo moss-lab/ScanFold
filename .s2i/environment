@@ -1,2 +1,2 @@
-PATH=/opt/RNAstructure/exe:$PATH
+RNASTRUCTUREBINPATH=/opt/RNAstructure/exe
 DATAPATH=/opt/RNAstructure/data_tables
