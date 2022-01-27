@@ -80,11 +80,6 @@ parser.add_argument('--fasta_index', type=str,
 
 ### input parms ###
 
-parser.add_argument('--nodeid', type=str,
-                    help='node id')
-parser.add_argument('--callbackurl', type=str,
-                    help='callbackurl')
-
 
 args = parser.parse_args()
 
@@ -107,8 +102,6 @@ ed_wig_file_path = args.ed_wig_file_path
 name = args.name
 fasta_file_path = args.fasta_file_path
 fasta_index = args.fasta_index
-nodeid = args.nodeid
-callbackurl = args.callbackurl
 
 split = args.split
 
@@ -642,11 +635,6 @@ write_wig(ED_list, step_size, name, ed_wig_file_path)
 write_fasta(seq, fasta_file_path, name)
 write_fai(seq, fasta_index, name)
 
-
-if split == "off":
-    url = str(callbackurl+"/"+str(nodeid)+"/0")
-    response = requests.get(url, verify=False)
-    # print(url)
 
 if split == "on":
     print("Completed ScanFold-Scan, intial results shown below.\n ScanFold-Fold is running now")
