@@ -69,6 +69,10 @@ parser.add_argument('-c', type=int, default=1,
                     help='Competition')
 
 ### Required for spinoff ###
+parser.add_argument('--terminallog', type=str,
+                    help='redirect stdout here')
+
+### Required for spinoff ###
 parser.add_argument('--out1', type=str,
                     help='out1 path')
 parser.add_argument('--out2', type=str,
@@ -112,6 +116,9 @@ parser.add_argument('-t', '--temp', type=int, default=37,
                     help='Folding temperature')
 
 args = parser.parse_args()
+
+sys.stdout = open(args.terminallog, 'w')
+
 
 temperature = args.temp
 
@@ -1667,3 +1674,4 @@ with open(structure_extract_file, "w") as se:
 dbn_log_file.close()
 print("ScanFold-Fold analysis complete! Refresh page to ensure proper loading of IGV")
 #print(url)
+sys.stdout.close()
