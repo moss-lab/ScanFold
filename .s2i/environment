@@ -1,2 +1,2 @@
-RNASTRUCTUREBINPATH=/opt/app-root/src/RNAstructure/exe
-DATAPATH=/opt/app-root/src/RNAstructure/data_tables
+RNASTRUCTUREBINPATH=/opt/app-root/RNAstructure/exe
+DATAPATH=/opt/app-root/RNAstructure/data_tables
