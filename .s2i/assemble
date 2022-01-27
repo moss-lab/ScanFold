@@ -1,11 +1,5 @@
 #!/bin/bash
 
-pushd /opt/app-root
-curl -L -O https://rna.urmc.rochester.edu/Releases/current/RNAstructureLinuxTextInterfaces64bit.tgz
-tar -xzvf RNAstructureLinuxTextInterfaces64bit.tgz
-rm -f RNAstructureLinuxTextInterfaces64bit.tgz
-popd
-
 function virtualenv_bin() {
     # New versions of Python (>3.6) should use venv module
     # from stdlib instead of virtualenv package
@@ -47,6 +41,12 @@ fi
 shopt -s dotglob
 echo "---> Installing application source ..."
 mv /tmp/src/* "$HOME"
+
+pushd "$HOME"
+curl -L -O https://rna.urmc.rochester.edu/Releases/current/RNAstructureLinuxTextInterfaces64bit.tgz
+tar -xzvf RNAstructureLinuxTextInterfaces64bit.tgz
+rm -f RNAstructureLinuxTextInterfaces64bit.tgz
+popd
 
 # set permissions for any installed artifacts
 fix-permissions /opt/app-root -P
