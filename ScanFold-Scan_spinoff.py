@@ -62,6 +62,10 @@ parser.add_argument('--name', type=str, default = "UserInput",
 parser.add_argument('--split', type=str, default = "off",
                     help='name of data being analyzed')
 
+### Required for spinoff ###
+parser.add_argument('--terminallog', type=str,
+                    help='redirect stdout here')
+
 ###Required arguments for webserver:
 parser.add_argument('--scan_out_path', type=str,
                     help='ScanFold-Scan output path')
@@ -82,6 +86,8 @@ parser.add_argument('--fasta_index', type=str,
 
 
 args = parser.parse_args()
+
+sys.stdout = open(args.terminallog, 'w')
 
 myfasta = args.input
 step_size = int(args.s)
@@ -644,3 +650,4 @@ print("Mean Z-score = "+str(mean_zscore))
 print("Mean P-value = "+str(mean_pscore))
 print("Mean Ensemble Diversity = "+str(mean_ED))
 print("ScanFold-Scan complete, find output files below")
+sys.stdout.close()
