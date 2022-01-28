@@ -132,7 +132,7 @@ if __name__ == "__main__":
         ]
         # the args string to use to call fold is really
         # the args leftover after scan has parsed
-        fold_args_list.extend([scan_leftover_args])
+        fold_args_list.extend(scan_leftover_args)
 
         subprocess.run(fold_args_list, check=True, capture_output=True)
 
