@@ -120,7 +120,7 @@ if __name__ == "__main__":
         # the args leftover after fold has parsed
         scan_args_list.extend(fold_leftover_args)
 
-        #subprocess.run(scan_args_list, check=True, capture_output=True)
+        subprocess.run(scan_args_list, check=True, capture_output=True)
 
         fold_args_list = [
             "python", "ScanFold-Fold_spinoff.py",
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         # the args leftover after scan has parsed
         fold_args_list.extend(scan_leftover_args)
 
-        #subprocess.run(fold_args_list, check=True, capture_output=True)
+        subprocess.run(fold_args_list, check=True, capture_output=True)
 
         # generate the tar file of all output
 
