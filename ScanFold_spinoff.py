@@ -2,6 +2,7 @@
 import argparse
 import tarfile
 import subprocess
+import os
 
 def parse_both_args():
     parser = argparse.ArgumentParser()
@@ -139,22 +140,22 @@ if __name__ == "__main__":
 
         with open(both_args.downloadall, 'wb') as output_wb:
             tar = tarfile.open(mode="w:gz", fileobj=output_wb)
-            tar.add(scan_args.scan_out_path)
-            tar.add(scan_args.zscore_wig_file_path)
-            tar.add(scan_args.mfe_wig_file_path)
-            tar.add(scan_args.ed_wig_file_path)
-            tar.add(scan_args.pvalue_wig_file_path)
-            tar.add(scan_args.fasta_file_path)
-            tar.add(scan_args.fasta_index)
-            tar.add(fold_args.out1)
-            tar.add(fold_args.out2)
-            tar.add(fold_args.out3)
-            tar.add(fold_args.out4)
-            tar.add(fold_args.out5)
-            tar.add(fold_args.out6)
-            tar.add(fold_args.dbn_file_path4)
-            tar.add(fold_args.structure_extract_file)
-            tar.add(fold_args.final_partners_wig)
+            tar.add(scan_args.scan_out_path, os.path.basename(scan_args.scan_out_path))
+            tar.add(scan_args.zscore_wig_file_path, os.path.basename(scan_args.zscore_wig_file_path))
+            tar.add(scan_args.mfe_wig_file_path, os.path.basename(scan_args.mfe_wig_file_path))
+            tar.add(scan_args.ed_wig_file_path, os.path.basename(scan_args.ed_wig_file_path))
+            tar.add(scan_args.pvalue_wig_file_path, os.path.basename(scan_args.pvalue_wig_file_path))
+            tar.add(scan_args.fasta_file_path, os.path.basename(scan_args.fasta_file_path))
+            tar.add(scan_args.fasta_index, os.path.basename(scan_args.fasta_index))
+            tar.add(fold_args.out1, os.path.basename(scan_args.out1))
+            tar.add(fold_args.out2, os.path.basename(scan_args.out2))
+            tar.add(fold_args.out3, os.path.basename(scan_args.out3))
+            tar.add(fold_args.out4, os.path.basename(scan_args.out4))
+            tar.add(fold_args.out5, os.path.basename(scan_args.out5))
+            tar.add(fold_args.out6, os.path.basename(scan_args.out6))
+            tar.add(fold_args.dbn_file_path4, os.path.basename(scan_args.dbn_file_path4))
+            tar.add(fold_args.structure_extract_file, os.path.basename(scan_args.structure_extract_file))
+            tar.add(fold_args.final_partners_wig, os.path.basename(scan_args.final_partners_wig))
             tar.close()
 
     except subprocess.CalledProcessError as e:
