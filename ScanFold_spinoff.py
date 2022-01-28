@@ -120,7 +120,7 @@ if __name__ == "__main__":
         # the args leftover after fold has parsed
         scan_args_list.extend(fold_leftover_args)
 
-        subprocess.run(scan_args_list, check=True, capture_output=True)
+        #subprocess.run(scan_args_list, check=True, capture_output=True)
 
         fold_args_list = [
             "python", "ScanFold-Fold_spinoff.py",
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         # the args leftover after scan has parsed
         fold_args_list.extend(scan_leftover_args)
 
-        subprocess.run(fold_args_list, check=True, capture_output=True)
+        #subprocess.run(fold_args_list, check=True, capture_output=True)
 
         # generate the tar file of all output
 
@@ -146,7 +146,7 @@ if __name__ == "__main__":
             tar.add(scan_args.ed_wig_file_path, os.path.basename(scan_args.ed_wig_file_path))
             tar.add(scan_args.pvalue_wig_file_path, os.path.basename(scan_args.pvalue_wig_file_path))
             tar.add(scan_args.fasta_file_path, os.path.basename(scan_args.fasta_file_path))
-            tar.add(scan_args.fasta_index, os.path.basename(scan_args.fasta_index))
+            tar.add(both_args.fasta_index, os.path.basename(both_args.fasta_index))
             tar.add(fold_args.out1, os.path.basename(scan_args.out1))
             tar.add(fold_args.out2, os.path.basename(scan_args.out2))
             tar.add(fold_args.out3, os.path.basename(scan_args.out3))
