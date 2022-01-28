@@ -41,19 +41,19 @@ from Bio import SeqIO
 
 #### Parsing arguments ####
 parser = argparse.ArgumentParser()
-parser.add_argument('-i', '--input', type=str, required=True,
-                    help='input filename')
-parser.add_argument('-s', type=int, default=10,
+parser.add_argument('--input', type=str, required=True,
+                help='input filename')
+parser.add_argument('--temp', type=int, default=37,
+                help='Folding temperature')
+parser.add_argument('--step_size', type=int, default=10,
                     help='step size')
-parser.add_argument('-w', type=int, default=120,
+parser.add_argument('--window_size', type=int, default=120,
                     help='window size')
-parser.add_argument('-r', type=int, default=30,
+parser.add_argument('--randomizations', type=int, default=30,
                     help='randomizations')
-parser.add_argument('-t', '--temp', type=int, default=37,
-                    help='Folding temperature')
-parser.add_argument('-type', type=str, default='mono',
+parser.add_argument('--type', type=str, default='mono',
                     help='randomization type')
-parser.add_argument('-p', type=str, default='off',
+parser.add_argument('--print_to_screen', type=str, default='off',
                     help='print to screen option (default off:1)')
 parser.add_argument('--print_random', type=str, default='off',
                     help='print to screen option (default off)')
@@ -90,12 +90,12 @@ args = parser.parse_args()
 sys.stdout = open(args.terminallog, 'w')
 
 myfasta = args.input
-step_size = int(args.s)
-window_size = int(args.w)
-randomizations = int(args.r)
+step_size = int(args.step_size)
+window_size = int(args.window_size)
+randomizations = int(args.randomizations)
 temperature = int(args.temp)
 type = str(args.type)
-print_to_screen = str(args.p)
+print_to_screen = str(args.print_to_screen)
 print_random = str(args.print_random)
 
 scan_out_path = args.scan_out_path

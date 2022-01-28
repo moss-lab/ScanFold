@@ -61,11 +61,13 @@ start_time = time.time()
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-i', '--input', type=str, required=True,
-                    help='input filename')
-parser.add_argument('-f', type=int, default=-2,
+parser.add_argument('--input', type=str, required=True,
+                help='input filename')
+parser.add_argument('--temp', type=int, default=37,
+                help='Folding temperature')
+parser.add_argument('--filter_value', type=int, default=-2,
                     help='filter value')
-parser.add_argument('-c', type=int, default=1,
+parser.add_argument('--competition', type=int, default=1,
                     help='Competition')
 
 ### Required for spinoff ###
@@ -112,8 +114,6 @@ parser.add_argument('--name', type=str, default = "UserInput",
                     help='name of data being analyzied')
 parser.add_argument('--final_partners_wig', type=str,
                     help='final partners wig file path')
-parser.add_argument('-t', '--temp', type=int, default=37,
-                    help='Folding temperature')
 
 args = parser.parse_args()
 
@@ -123,8 +123,8 @@ sys.stdout = open(args.terminallog, 'w')
 temperature = args.temp
 
 filename = args.input
-filter = int(args.f)
-competition = int(args.c)
+filter = int(args.filter_value)
+competition = int(args.competition)
 out1 = args.out1
 out2 = args.out2
 out3 = args.out3

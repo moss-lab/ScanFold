@@ -6,14 +6,14 @@ import os
 
 def parse_both_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', type=str, required=True,
+    parser.add_argument('--input', type=str, required=True,
                         help='input filename')
     parser.add_argument('--terminallog', type=str,
                         help='redirect stdout here')
     parser.add_argument('--downloadall', type=str, help='Path and filename write output to')
     parser.add_argument('--name', type=str, default = "UserInput",
                         help='name of data being analyzed')
-    parser.add_argument('-t', '--temp', type=str, default="37",
+    parser.add_argument('--temp', type=str, default="37",
                         help='Folding temperature')
     parser.add_argument('--fasta_index', type=str,
                         help='fasta index file path')
@@ -24,15 +24,15 @@ def parse_scan_args(args):
     #### Parsing arguments ####
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-s', type=int, default=10,
+    parser.add_argument('--step_size', type=str, default="10",
                         help='step size')
-    parser.add_argument('-w', type=int, default=120,
+    parser.add_argument('--window_size', type=str, default="120",
                         help='window size')
-    parser.add_argument('-r', type=int, default=30,
+    parser.add_argument('--randomizations', type=str, default="30",
                         help='randomizations')
-    parser.add_argument('-type', type=str, default='mono',
+    parser.add_argument('--type', type=str, default='mono',
                         help='randomization type')
-    parser.add_argument('-p', type=str, default='off',
+    parser.add_argument('--print_to_screen', type=str, default='off',
                         help='print to screen option (default off:1)')
     parser.add_argument('--print_random', type=str, default='off',
                         help='print to screen option (default off)')
@@ -61,9 +61,9 @@ def parse_fold_args(args):
     #### Parsing arguments ####
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-f', type=int, default=-2,
+    parser.add_argument('--filter_value', type=str, default="-2",
                         help='filter value')
-    parser.add_argument('-c', type=int, default=1,
+    parser.add_argument('--competition', type=str, default="1",
                         help='Competition')
     parser.add_argument('--global_refold', action='store_true',
                         help='global refold oprion')
