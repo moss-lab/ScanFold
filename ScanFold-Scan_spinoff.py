@@ -41,19 +41,19 @@ from Bio import SeqIO
 
 #### Parsing arguments ####
 parser = argparse.ArgumentParser()
-parser.add_argument('-i', '--input', type=str, required=True,
-                    help='input filename')
-parser.add_argument('-s', type=int, default=10,
+parser.add_argument('--input', type=str, required=True,
+                help='input filename')
+parser.add_argument('--temp', type=int, default=37,
+                help='Folding temperature')
+parser.add_argument('--step_size', type=int, default=10,
                     help='step size')
-parser.add_argument('-w', type=int, default=120,
+parser.add_argument('--window_size', type=int, default=120,
                     help='window size')
-parser.add_argument('-r', type=int, default=30,
+parser.add_argument('--randomizations', type=int, default=30,
                     help='randomizations')
-parser.add_argument('-t', '--temp', type=int, default=37,
-                    help='Folding temperature')
-parser.add_argument('-type', type=str, default='mono',
+parser.add_argument('--type', type=str, default='mono',
                     help='randomization type')
-parser.add_argument('-p', type=str, default='off',
+parser.add_argument('--print_to_screen', type=str, default='off',
                     help='print to screen option (default off:1)')
 parser.add_argument('--print_random', type=str, default='off',
                     help='print to screen option (default off)')
@@ -61,6 +61,10 @@ parser.add_argument('--name', type=str, default = "UserInput",
                     help='name of data being analyzed')
 parser.add_argument('--split', type=str, default = "off",
                     help='name of data being analyzed')
+
+### Required for spinoff ###
+parser.add_argument('--terminallog', type=str,
+                    help='redirect stdout here')
 
 ###Required arguments for webserver:
 parser.add_argument('--scan_out_path', type=str,
@@ -80,21 +84,18 @@ parser.add_argument('--fasta_index', type=str,
 
 ### input parms ###
 
-parser.add_argument('--nodeid', type=str,
-                    help='node id')
-parser.add_argument('--callbackurl', type=str,
-                    help='callbackurl')
-
 
 args = parser.parse_args()
 
+sys.stdout = open(args.terminallog, 'w')
+
 myfasta = args.input
-step_size = int(args.s)
-window_size = int(args.w)
-randomizations = int(args.r)
+step_size = int(args.step_size)
+window_size = int(args.window_size)
+randomizations = int(args.randomizations)
 temperature = int(args.temp)
 type = str(args.type)
-print_to_screen = str(args.p)
+print_to_screen = str(args.print_to_screen)
 print_random = str(args.print_random)
 
 scan_out_path = args.scan_out_path
@@ -107,8 +108,6 @@ ed_wig_file_path = args.ed_wig_file_path
 name = args.name
 fasta_file_path = args.fasta_file_path
 fasta_index = args.fasta_index
-nodeid = args.nodeid
-callbackurl = args.callbackurl
 
 split = args.split
 
@@ -643,11 +642,6 @@ write_fasta(seq, fasta_file_path, name)
 write_fai(seq, fasta_index, name)
 
 
-if split == "off":
-    url = str(callbackurl+"/"+str(nodeid)+"/0")
-    response = requests.get(url, verify=False)
-    # print(url)
-
 if split == "on":
     print("Completed ScanFold-Scan, intial results shown below.\n ScanFold-Fold is running now")
 
@@ -656,3 +650,4 @@ print("Mean Z-score = "+str(mean_zscore))
 print("Mean P-value = "+str(mean_pscore))
 print("Mean Ensemble Diversity = "+str(mean_ED))
 print("ScanFold-Scan complete, find output files below")
+sys.stdout.close()

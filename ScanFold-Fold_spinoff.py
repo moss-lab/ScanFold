@@ -49,6 +49,8 @@ import requests
 #for mono z-score
 import random
 
+CT2DOTPATH = os.environ['RNASTRUCTUREBINPATH'] + "/ct2dot"
+
 # temporary fix to disable ssl warning
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -59,12 +61,18 @@ start_time = time.time()
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-i', '--input', type=str, required=True,
-                    help='input filename')
-parser.add_argument('-f', type=int, default=-2,
+parser.add_argument('--input', type=str, required=True,
+                help='input filename')
+parser.add_argument('--temp', type=int, default=37,
+                help='Folding temperature')
+parser.add_argument('--filter_value', type=int, default=-2,
                     help='filter value')
-parser.add_argument('-c', type=int, default=1,
+parser.add_argument('--competition', type=int, default=1,
                     help='Competition')
+
+### Required for spinoff ###
+parser.add_argument('--terminallog', type=str,
+                    help='redirect stdout here')
 
 ### Required for spinoff ###
 parser.add_argument('--out1', type=str,
@@ -100,26 +108,23 @@ parser.add_argument('--global_refold', action='store_true',
                     help='global refold oprion')
 
 
-parser.add_argument('--nodeid', type=str,
-                    help='node id')
-parser.add_argument('--callbackurl', type=str,
-                    help='callbackurl')
 parser.add_argument('--fasta_index', type=str,
                     help='fasta index file path')
 parser.add_argument('--name', type=str, default = "UserInput",
                     help='name of data being analyzied')
 parser.add_argument('--final_partners_wig', type=str,
                     help='final partners wig file path')
-parser.add_argument('-t', '--temp', type=int, default=37,
-                    help='Folding temperature')
 
 args = parser.parse_args()
+
+sys.stdout = open(args.terminallog, 'w')
+
 
 temperature = args.temp
 
 filename = args.input
-filter = int(args.f)
-competition = int(args.c)
+filter = int(args.filter_value)
+competition = int(args.competition)
 out1 = args.out1
 out2 = args.out2
 out3 = args.out3
@@ -141,8 +146,6 @@ structure_extract_file = args.structure_extract_file
 final_partners_wig = args.final_partners_wig
 
 fasta_index_path = args.fasta_index
-nodeid = args.nodeid
-callbackurl = args.callbackurl
 
 
 try:
@@ -1399,9 +1402,9 @@ if competition == 1:
     write_ct(final_partners, out3, float(-2), strand)
 
     #Create a dbn file for forna
-    os.system(str("ct2dot "+str(out1)+" 1 "+str(dbn_file_path1)))
-    os.system(str("ct2dot "+str(out2)+" 1 "+str(dbn_file_path2)))
-    os.system(str("ct2dot "+str(out3)+" 1 "+str(dbn_file_path3)))
+    os.system(str(CT2DOTPATH + " "+str(out1)+" 1 "+str(dbn_file_path1)))
+    os.system(str(CT2DOTPATH + " "+str(out2)+" 1 "+str(dbn_file_path2)))
+    os.system(str(CT2DOTPATH + " "+str(out3)+" 1 "+str(dbn_file_path3)))
 
 
     # write_ct(final_partners, output+"below_mean_"+str(round(meanz, 2))+".ct", meanz, strand)
@@ -1414,15 +1417,14 @@ if competition == 1:
     #Write DBN files from CT files
     # elapsed_time = str(round((time.time() - start_time), 2))+"s"
     # print("Elapsed time: "+elapsed_time)
-    # os.system(str("ct2dot "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
-    # os.system(str("ct2dot "+output+"-1.ct 1 "+output+"-1.dbn"))
+    # os.system(str(CT2DOTPATH + " "+output+"no_filter.ct 1 "+output+"no_filter.dbn"))
+    # os.system(str(CT2DOTPATH + " "+"-1.ct 1 "+output+"-1.dbn"))
     # if filter != None:
-    #     os.system(str("ct2dot "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
-    # os.system(str("ct2dot "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
-    # os.system(str("ct2dot "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
-    # os.system(str("ct2dot "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
-url = str(callbackurl+"/"+str(nodeid)+"/0")
-response = requests.get(url, verify=False)
+    #     os.system(str(CT2DOTPATH + " "+output+str(filter)+".ct 1 "+output+str(filter)+".dbn"))
+    # os.system(str("CT2DOTPATH + " "+output+"below_mean_"+str(round(meanz, 2))+".ct 1 "+output+"below_mean_"+str(round(meanz, 2))+".dbn"))
+    # os.system(str(CT2DOTPATH + " "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".ct 1 "+output+"1sd_below_mean_"+str(round(one_sig_below, 2))+".dbn"))
+    # os.system(str(CT2DOTPATH + " "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".ct 1 "+output+"2sd_below_mean_"+str(round(two_sig_below, 2))+".dbn"))
+
 if competition == 1:
     write_bp(final_partners, out6, start_coordinate)
     write_wig_dict(final_partners, final_partners_wig, name)
@@ -1672,3 +1674,4 @@ with open(structure_extract_file, "w") as se:
 dbn_log_file.close()
 print("ScanFold-Fold analysis complete! Refresh page to ensure proper loading of IGV")
 #print(url)
+sys.stdout.close()
