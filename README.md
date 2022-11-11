@@ -1,6 +1,6 @@
 # ScanFold
 
-*ScanFold has been implemented as a WebServer.* Try it out at https://mosslabtools.bb.iastate.edu/scanfold
+*ScanFold has been implemented as a WebServer.* Try it out at https://mosslabtools.bb.iastate.edu/scanfold1
 and read more about its uses here: https://doi.org/10.1016/j.ymeth.2019.11.001
 
 The ScanFold pipeline is a set of scripts which scan a large RNA sequence (using ScanFold-Scan.py) and subsequently extract  structural motifs (using ScanFold-Fold.py) which have evidence of being ordered by evolution to form an unusually stable structure (potentially to serve a functional role).
